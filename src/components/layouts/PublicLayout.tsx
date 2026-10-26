@@ -1,12 +1,11 @@
 import { memo, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { Banknote, ChevronLeft, ChevronRight, Menu, Smartphone, Wallet, X } from 'lucide-react';
+import { ExternalLink, Mail, MapPin, Menu, Phone, X } from 'lucide-react';
 import LazyIframe from '@/components/ui/LazyIframe';
 import SmartImage from '@/components/ui/SmartImage';
-import { PublicPageSkeleton, Skeleton } from '@/components/ui/skeleton';
+import { PublicPageSkeleton } from '@/components/ui/skeleton';
 import { useCurrentMinute } from '@/lib/weather';
 import { useRealtimeCollection } from '@/lib/firebase-data';
-import { useDonationMethods } from '@/lib/donations';
 import { DIOCESE_SEAL_URL } from '@/lib/brand';
 
 const routeNavItems = [
@@ -43,108 +42,6 @@ const HeaderClock = memo(function HeaderClock() {
     </p>
   );
 });
-
-function donationIcon(name: string) {
-  const iconClass = 'donation-icon';
-  switch (name?.toLowerCase()) {
-    case 'wallet':
-      return <Wallet size={16} className={iconClass} aria-hidden />;
-    case 'banknote':
-      return <Banknote size={16} className={iconClass} aria-hidden />;
-    default:
-      return <Smartphone size={16} className={iconClass} aria-hidden />;
-  }
-}
-
-function DonationCard() {
-  const { methods, loading, error, refetch } = useDonationMethods(true);
-  const [index, setIndex] = useState(0);
-
-  const activeIndex = Math.min(index, Math.max(methods.length - 1, 0));
-  const active = methods[activeIndex];
-
-  const goTo = (next: number) => {
-    if (!methods.length) return;
-    setIndex((next + methods.length) % methods.length);
-  };
-
-  if (!active) {
-    return (
-      <div className="donation-card">
-        <h4 className="donation-title">Support Our Mission</h4>
-        <p className="donation-sub">Scan QR code to donate</p>
-        {loading ? (
-          <div className="donation-card-skeleton" role="status" aria-label="Loading donation options">
-            <Skeleton className="h-4 w-28" />
-            <Skeleton className="h-28 w-28" />
-            <Skeleton className="h-3 w-full" />
-            <span className="sr-only">Loading donation options…</span>
-          </div>
-        ) : (
-          <>
-            <p className="donation-desc">
-              {error
-                ? 'Donation options are unavailable right now. Please try again shortly.'
-                : 'Donation options will be listed here soon.'}
-            </p>
-            {error ? (
-              <button type="button" className="donation-retry" onClick={() => void refetch()}>
-                Try again
-              </button>
-            ) : null}
-          </>
-        )}
-        <p className="donation-note">
-          <Link to="/donations">View the donation page</Link>
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="donation-card">
-      <h4 className="donation-title">Support Our Mission</h4>
-      <p className="donation-sub">Scan QR code to donate</p>
-      <span className="donation-type">
-        {donationIcon(active.icon || active.name)}
-        {active.name}
-      </span>
-      {active.qrImage ? (
-        <div className="donation-qr">
-          <SmartImage src={active.qrImage} alt={`${active.name} QR code`} fallbackLabel={`${active.name} QR code unavailable`} />
-        </div>
-      ) : null}
-      <p className="donation-desc">{active.description || (active.accountNumber ? `Account: ${active.accountNumber}` : '')}</p>
-      <div className="donation-controls">
-        <button type="button" className="donation-arrow" aria-label="Previous donation option" onClick={() => goTo(activeIndex - 1)}>
-          <ChevronLeft size={14} />
-        </button>
-        <div className="donation-dots">
-          {methods.map((method, methodIndex) => (
-            <button
-              key={method.id}
-              type="button"
-              className="donation-dot"
-              aria-label={`Show ${method.name}`}
-              aria-current={methodIndex === activeIndex}
-              onClick={() => setIndex(methodIndex)}
-            />
-          ))}
-        </div>
-        <button type="button" className="donation-arrow" aria-label="Next donation option" onClick={() => goTo(activeIndex + 1)}>
-          <ChevronRight size={14} />
-        </button>
-      </div>
-      <p className="donation-note">
-        <Link to="/donations">View all ways to give</Link>
-        <br />
-        Or contact us directly at
-        <br />
-        <a href="mailto:diocesecatarman@gmail.com">diocesecatarman@gmail.com</a>
-      </p>
-    </div>
-  );
-}
 
 export default function PublicLayout() {
   const [scrolled, setScrolled] = useState(false);
@@ -320,31 +217,42 @@ export default function PublicLayout() {
               <SmartImage src={DIOCESE_SEAL_URL} alt="Diocese of Catarman seal" fallbackLabel="Diocese of Catarman seal" />
               <span><strong>Diocese of Catarman</strong><small>Northern Samar, Philippines</small></span>
             </Link>
+            <p className="footer-intro">Stay connected with the life and work of the Diocese.</p>
+            <nav className="footer-explore-links" aria-label="Explore the website">
+              <Link to="/parishes">Parishes</Link>
+              <Link to="/events">Events</Link>
+              <Link to="/announcements">Latest updates</Link>
+            </nav>
           </div>
 
           <div className="footer-col">
             <p className="footer-heading">Contact</p>
             <nav className="footer-links" aria-label="Contact details">
-              <a href="tel:+63907679132">+63 09076-79132 (TM)</a>
-              <a href="tel:+63907663961">+63 09076-63961 (TNT)</a>
-              <a href="mailto:diocesecatarman@gmail.com">diocesecatarman@gmail.com</a>
+              <a href="tel:+63907679132"><Phone size={15} aria-hidden="true" /><span>+63 09076-79132 <small>(TM)</small></span></a>
+              <a href="tel:+63907663961"><Phone size={15} aria-hidden="true" /><span>+63 09076-63961 <small>(TNT)</small></span></a>
+              <a href="mailto:diocesecatarman@gmail.com"><Mail size={15} aria-hidden="true" /><span>diocesecatarman@gmail.com</span></a>
             </nav>
           </div>
 
           <div className="footer-col">
             <p className="footer-heading">Address</p>
-            <p className="footer-blurb">DCC Cathedral Compound,<br />Catarman, Northern Samar</p>
+            <div className="footer-location-card">
+              <p className="footer-blurb footer-address">
+                <MapPin size={16} aria-hidden="true" />
+                <span><strong>Our Lady of the Annunciation Cathedral</strong><small>DCC Cathedral Compound,<br />Catarman, Northern Samar</small></span>
+              </p>
             <div className="footer-map">
               <LazyIframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3870.1397457927727!2d125.12647767463297!3d12.490314191585706!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33f4ba10a91c8f53%3A0x6d499d2a1b3a91f!2sCatarman%20Cathedral!5e0!3m2!1sen!2sph!4v1716174935720!5m2!1sen!2sph"
+                src="https://www.google.com/maps?q=12.4986944%2C124.6365&z=16&output=embed"
                 title="Catarman Cathedral map"
               />
             </div>
+              <a className="footer-map-link" href="https://www.google.com/maps/search/?api=1&query=12.4986944%2C124.6365" target="_blank" rel="noopener noreferrer">
+                Open in Google Maps <ExternalLink size={13} aria-hidden="true" />
+              </a>
+            </div>
           </div>
 
-          <div className="footer-col">
-            <DonationCard />
-          </div>
         </div>
 
         <div className="footer-bottom">

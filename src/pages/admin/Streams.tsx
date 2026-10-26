@@ -11,11 +11,11 @@ export default function AdminStreams() {
       itemName="Stream"
       initialValues={{ active: true, order: 1 }}
       fields={[
-        { key: 'title', label: 'Title', required: true, placeholder: 'Catholic Church Catarman Northern Samar' },
-        { key: 'url', label: 'YouTube or Facebook link / video ID', required: true, placeholder: 'https://www.youtube.com/watch?v=... or https://www.facebook.com/.../videos/...' },
-        { key: 'description', label: 'Description', type: 'textarea' },
-        { key: 'order', label: 'Display order', type: 'number', required: true },
-        { key: 'active', label: 'Active on public website', type: 'checkbox' },
+        { key: 'title', label: 'Title', required: true, placeholder: 'Catholic Church Catarman Northern Samar', section: 'Stream details' },
+        { key: 'url', label: 'YouTube or Facebook link / video ID', required: true, placeholder: 'Paste a YouTube or Facebook video link', section: 'Stream details' },
+        { key: 'description', label: 'Description', type: 'textarea', section: 'Stream details' },
+        { key: 'order', label: 'Display order', type: 'number', required: true, section: 'Publishing' },
+        { key: 'active', label: 'Active on public website', type: 'checkbox', section: 'Publishing' },
       ]}
       columns={[
         { key: 'preview', label: 'Source', render: item => {

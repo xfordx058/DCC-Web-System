@@ -149,7 +149,7 @@ export default function AdminChurches() {
       title: 'Discard unsaved changes?',
       description: 'Your church edits will be lost if you close this form.',
       confirmLabel: 'Discard changes',
-      tone: 'default',
+      tone: 'danger',
     }))) return;
     resetForm();
   }

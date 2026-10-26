@@ -9,10 +9,10 @@ export default function AdminAnnouncements() {
       itemName="Announcement"
       initialValues={{ active: true, publishedDate: new Date().toISOString().slice(0, 10) }}
       fields={[
-        { key: 'title', label: 'Title', required: true },
-        { key: 'content', label: 'Content', type: 'textarea', required: true },
-        { key: 'publishedDate', label: 'Published date', type: 'date', required: true },
-        { key: 'active', label: 'Active on public website', type: 'checkbox' },
+        { key: 'title', label: 'Title', required: true, section: 'Announcement details' },
+        { key: 'content', label: 'Content', type: 'textarea', required: true, section: 'Announcement details' },
+        { key: 'publishedDate', label: 'Published date', type: 'date', required: true, section: 'Publishing' },
+        { key: 'active', label: 'Active on public website', type: 'checkbox', section: 'Publishing' },
       ]}
       columns={[
         { key: 'title', label: 'Title' },

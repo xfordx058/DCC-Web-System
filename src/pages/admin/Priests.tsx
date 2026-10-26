@@ -335,6 +335,7 @@ export default function AdminPriests() {
       <AdminModal
         open={isEditing}
         onClose={closeForm}
+        className="admin-crud-editor-modal"
         eyebrow={form.id ? 'Edit record' : 'New record'}
         title={form.id ? `Edit ${form.name || 'priest'}` : 'Add priest'}
         description="Record the priest's assignment, ordination year, and biography."
@@ -350,6 +351,7 @@ export default function AdminPriests() {
         }
       >
         <form id="priest-editor-form" onSubmit={handleSave} className="admin-form-grid">
+          <div className="admin-form-section-heading"><h3>Priest information</h3><span /></div>
           <AdminField label="Name" required>
             <input required value={form.name || ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
           </AdminField>
@@ -368,6 +370,7 @@ export default function AdminPriests() {
               <option value="inactive">Inactive</option>
             </select>
           </AdminField>
+          <div className="admin-form-section-heading"><h3>Biography &amp; portrait</h3><span /></div>
           <AdminField label="Biography" className="admin-field-full">
             <textarea value={form.biography || ''} onChange={e => setForm(f => ({ ...f, biography: e.target.value }))} />
           </AdminField>

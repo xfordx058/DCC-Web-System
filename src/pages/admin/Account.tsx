@@ -283,6 +283,7 @@ export default function AdminAccount() {
       <AdminModal
         open={administratorOpen}
         onClose={() => setAdministratorOpen(false)}
+        className="admin-crud-editor-modal"
         eyebrow="Access"
         title="Add administrator"
         description="Create sign-in credentials for another administrator. New administrators receive full access to the admin portal."
@@ -300,6 +301,7 @@ export default function AdminAccount() {
         }
       >
         <form id="administrator-form" className="admin-form-grid" onSubmit={submitAdministrator}>
+          <div className="admin-form-section-heading"><h3>Administrator profile</h3><span /></div>
           <AdminField label="Full name">
             <div className="admin-input-wrap has-icon">
               <span className="admin-input-icon" aria-hidden="true"><UserRound size={16} /></span>
@@ -335,6 +337,7 @@ export default function AdminAccount() {
               <small id="new-admin-email-error" className="admin-error" role="alert">{administratorErrors.email}</small>
             ) : null}
           </AdminField>
+          <div className="admin-form-section-heading"><h3>Sign-in security</h3><span /></div>
           <AdminField label="Password" className="admin-field-password">
             <div className="admin-input-wrap has-icon has-reveal">
               <span className="admin-input-icon" aria-hidden="true"><KeyRound size={16} /></span>

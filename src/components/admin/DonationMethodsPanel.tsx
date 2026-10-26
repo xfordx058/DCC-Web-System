@@ -445,6 +445,7 @@ export default function DonationMethodsPanel() {
       <AdminModal
         open={editorOpen}
         onClose={closeForm}
+        className="admin-crud-editor-modal"
         eyebrow={editing ? 'Edit payment method' : 'New payment method'}
         title={editing ? `Edit ${editing.name}` : 'Add payment method'}
         description="Configure the bank account or e-wallet details shown on the public donation page."
@@ -460,6 +461,7 @@ export default function DonationMethodsPanel() {
         }
       >
         <form id="donation-method-form" onSubmit={handleSave} className="admin-form-grid">
+          <div className="admin-form-section-heading"><h3>Payment details</h3><span /></div>
           <AdminField label="Payment method type" required>
             <select required value={form.type} onChange={event => setField('type', event.target.value)}>
               <option value="">Select…</option>
@@ -514,6 +516,7 @@ export default function DonationMethodsPanel() {
             <small className="admin-hint">Step-by-step guide shown below the account details on the public page.</small>
           </AdminField>
 
+          <div className="admin-form-section-heading"><h3>QR code &amp; display</h3><span /></div>
           <AdminField label="QR code or payment reference image">
             <div className="admin-upload">
               {qrPreview || editing?.qrImage ? (

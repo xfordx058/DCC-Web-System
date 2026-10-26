@@ -3,6 +3,7 @@ import { ImagePlus, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import type { ReactNode } from 'react';
+import { Fragment } from 'react';
 import { AdminField, AdminHeader, formatDate, type RecordItem, useRealtimeCollection } from './AdminPrimitives';
 import { AdminModal } from './AdminModal';
 import { db, push, ref, remove, set, update } from '@/db/firebase';
@@ -28,6 +29,7 @@ type Field = {
   required?: boolean;
   options?: Option[];
   placeholder?: string;
+  section?: string;
 };
 
 type Column = {
@@ -369,6 +371,7 @@ export default function AdminCrudPage({
       <AdminModal
         open={editorOpen}
         onClose={closeForm}
+        className="admin-crud-editor-modal"
         eyebrow={editing ? 'Edit record' : 'New record'}
         title={editing ? `Edit ${itemName}` : `Add ${itemName}`}
         description={description}
@@ -380,26 +383,26 @@ export default function AdminCrudPage({
             </Button>
             <Button type="submit" form="crud-editor-form" disabled={saving} aria-busy={saving}>
               {saving ? <Spinner className="mr-2" label="Saving" /> : null}
-              {saving ? (uploadPercent > 0 ? `Uploading ${uploadPercent}%` : 'Saving…') : 'Save changes'}
+              {saving ? (uploadPercent > 0 ? `Uploading ${uploadPercent}%` : 'Saving…') : editing ? 'Save changes' : `Create ${itemName}`}
             </Button>
           </>
         }
       >
-        <form id="crud-editor-form" onSubmit={handleSave} className="admin-form-grid">
-          {fields.map(field => {
+        <form id="crud-editor-form" onSubmit={handleSave} className="admin-form-grid admin-crud-form">
+          {fields.map((field, index) => {
             const value = form[field.key];
+            let control: ReactNode;
             if (field.type === 'checkbox') {
-              return (
-                <label key={field.key} className="admin-checkbox">
+              control = (
+                <label className="admin-checkbox">
                   <input type="checkbox" checked={Boolean(value)} onChange={event => setForm(current => ({ ...current, [field.key]: event.target.checked }))} />
                   <span>{field.label}</span>
                 </label>
               );
-            }
-            if (field.type === 'file') {
+            } else if (field.type === 'file') {
               const currentImage = imageKey ? form[imageKey] : undefined;
-              return (
-                <AdminField key={field.key} label={field.label}>
+              control = (
+                <AdminField label={field.label}>
                   <div className="admin-upload">
                     {preview || currentImage ? (
                       <SmartImage className="admin-upload-preview" src={preview || currentImage} alt="Selected image preview" loading="eager" />
@@ -420,26 +423,24 @@ export default function AdminCrudPage({
                   </div>
                 </AdminField>
               );
-            }
-            if (field.type === 'textarea') {
-              return (
-                <AdminField key={field.key} label={field.label} required={field.required}>
+            } else if (field.type === 'textarea') {
+              control = (
+                <AdminField label={field.label} required={field.required} className="admin-field-full">
                   <textarea required={field.required} value={value ?? ''} placeholder={field.placeholder} onChange={event => setForm(current => ({ ...current, [field.key]: event.target.value }))} />
                 </AdminField>
               );
-            }
-            if (field.type === 'select') {
-              return (
-                <AdminField key={field.key} label={field.label} required={field.required}>
+            } else if (field.type === 'select') {
+              control = (
+                <AdminField label={field.label} required={field.required}>
                   <select required={field.required} value={value ?? ''} onChange={event => setForm(current => ({ ...current, [field.key]: event.target.value }))}>
                     <option value="">Select…</option>
                     {field.options?.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
                   </select>
                 </AdminField>
               );
-            }
-            return (
-              <AdminField key={field.key} label={field.label} required={field.required}>
+            } else {
+              control = (
+                <AdminField label={field.label} required={field.required}>
                 <input
                   type={field.type ?? 'text'}
                   required={field.required}
@@ -447,7 +448,16 @@ export default function AdminCrudPage({
                   placeholder={field.placeholder}
                   onChange={event => setForm(current => ({ ...current, [field.key]: event.target.value }))}
                 />
-              </AdminField>
+                </AdminField>
+              );
+            }
+            return (
+              <Fragment key={field.key}>
+                {field.section && field.section !== fields[index - 1]?.section ? (
+                  <div className="admin-form-section-heading"><h3>{field.section}</h3><span /></div>
+                ) : null}
+                {control}
+              </Fragment>
             );
           })}
         </form>

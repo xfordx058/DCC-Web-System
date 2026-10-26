@@ -9,9 +9,9 @@ export default function AdminEvents() {
       description="Create upcoming diocesan events and retain expired entries for administrative history."
       itemName="Event"
       fields={[
-        { key: 'title', label: 'Event title', required: true },
-        { key: 'description', label: 'Description', type: 'textarea', required: true },
-        { key: 'dateExpired', label: 'End date', type: 'date', required: true },
+        { key: 'title', label: 'Event title', required: true, section: 'Event details' },
+        { key: 'description', label: 'Description', type: 'textarea', required: true, section: 'Event details' },
+        { key: 'dateExpired', label: 'End date', type: 'date', required: true, section: 'Schedule' },
       ]}
       columns={[
         { key: 'title', label: 'Event title' },

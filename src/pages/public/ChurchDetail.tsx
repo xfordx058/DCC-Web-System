@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
-import { ArrowRight, Church as ChurchIcon, ExternalLink, MapPin, UserRound } from 'lucide-react';
+import { ArrowRight, Church as ChurchIcon, ExternalLink, MapPin, ShieldCheck, UserRound, UsersRound } from 'lucide-react';
 import { useRealtimeCollection } from '@/lib/firebase-data';
 import { Skeleton, SkeletonGrid, SkeletonText } from '@/components/ui/skeleton';
 import { EmptyState, ErrorState } from '@/components/ui/states';
@@ -36,12 +36,17 @@ function ParishLoadingState() {
     <div className="public-page-stack parish-detail-loading" aria-label="Loading parish details" role="status">
       <Skeleton className="h-4 w-64" />
       <div className="public-detail-hero parish-detail-hero-skeleton"><Skeleton className="h-full w-full" /></div>
+      <div className="parish-facts-grid parish-facts-skeleton" aria-hidden="true">
+        <div className="parish-fact-card"><Skeleton className="parish-fact-icon" /><div><Skeleton className="h-3 w-20" /><Skeleton className="h-5 w-32" /></div></div>
+        <div className="parish-fact-card"><Skeleton className="parish-fact-icon" /><div><Skeleton className="h-3 w-24" /><Skeleton className="h-5 w-28" /></div></div>
+        <div className="parish-fact-card"><Skeleton className="parish-fact-icon" /><div><Skeleton className="h-3 w-24" /><Skeleton className="h-5 w-24" /></div></div>
+      </div>
       <div className="parish-detail-skeleton-grid">
         <div className="public-detail-panel"><Skeleton className="h-5 w-40" /><SkeletonText lines={4} /></div>
         <div className="public-detail-panel"><Skeleton className="h-5 w-40" /><SkeletonText lines={4} /></div>
       </div>
       <SkeletonGrid count={3} />
-      <span className="sr-only">Loading parish information</span>
+      <span className="sr-only">Loading parish information, please wait.</span>
     </div>
   );
 }
@@ -57,7 +62,7 @@ export default function ChurchDetail() {
 
   if (error) {
     return (
-      <div className="public-page-stack">
+      <div className="public-page-stack parish-page-state">
         <Link to="/parishes" className="section-link">← Back to parishes</Link>
         <ErrorState title="Unable to load this church" description="The church details could not be reached. Check your connection and try again." onRetry={() => void refetch()} />
       </div>
@@ -66,7 +71,7 @@ export default function ChurchDetail() {
 
   if (!church || !church.name) {
     return (
-      <div className="public-page-stack">
+      <div className="public-page-stack parish-page-state">
         <Link to="/parishes" className="section-link">← Back to parishes</Link>
         <EmptyState icon={ChurchIcon} title="Church not found" description="This church may have been moved or removed from the parish directory." action={<Link to="/parishes" className="ui-btn ui-btn-secondary">Browse all parishes</Link>} />
       </div>
@@ -109,15 +114,35 @@ export default function ChurchDetail() {
         </div>
       </section>
 
+      <section className="parish-facts-grid" aria-label="Parish at a glance">
+        {church.patronSaint ? (
+          <article className="parish-fact-card">
+            <span className="parish-fact-icon" aria-hidden="true"><ShieldCheck size={19} /></span>
+            <div><p>Patron saint</p><h2>{church.patronSaint}</h2></div>
+          </article>
+        ) : null}
+        {church.status ? (
+          <article className="parish-fact-card">
+            <span className="parish-fact-icon" aria-hidden="true"><ChurchIcon size={19} /></span>
+            <div><p>Parish status</p><h2>{church.status}</h2></div>
+          </article>
+        ) : null}
+        {hasClergyAssignments ? (
+          <article className="parish-fact-card">
+            <span className="parish-fact-icon" aria-hidden="true"><UsersRound size={19} /></span>
+            <div><p>Clergy assigned</p><h2>{assistantIds.length + (church.mainPriestId ? 1 : 0)} {assistantIds.length + (church.mainPriestId ? 1 : 0) === 1 ? 'member' : 'members'}</h2></div>
+          </article>
+        ) : null}
+      </section>
+
       <div className="parish-detail-layout">
         <div className="parish-detail-main">
-          <section className="public-detail-panel parish-about-panel" aria-labelledby="parish-about-heading">
-            <p className="admin-eyebrow">About the parish</p>
-            <h2 id="parish-about-heading">Church history</h2>
+          <section className="public-detail-panel parish-about-panel parish-content-card" aria-labelledby="parish-about-heading">
+            <div className="parish-card-heading"><p className="admin-eyebrow">About the parish</p><h2 id="parish-about-heading">Church history</h2></div>
             {church.history?.trim() ? <p className="parish-history-text">{church.history}</p> : <p className="parish-information-note">Information not yet available.</p>}
           </section>
 
-          <section className="parish-clergy-section" aria-labelledby="parish-clergy-heading">
+          <section className="parish-clergy-section parish-content-card" aria-labelledby="parish-clergy-heading">
             <div className="parish-section-heading">
               <div><p className="admin-eyebrow">Leadership</p><h2 id="parish-clergy-heading">Parish clergy</h2></div>
             </div>
@@ -145,7 +170,7 @@ export default function ChurchDetail() {
             ) : <EmptyState compact icon={UserRound} title="No clergy assignments listed" description="Parish leadership information has not been added yet." />}
           </section>
 
-          <section className="parish-location-section" aria-labelledby="parish-location-heading">
+          <section className="parish-location-section parish-content-card" aria-labelledby="parish-location-heading">
             <div className="parish-section-heading"><div><p className="admin-eyebrow">Visit</p><h2 id="parish-location-heading">Location</h2></div></div>
             {church.address || coordinates ? (
               <div className="parish-location-card">
@@ -170,11 +195,9 @@ export default function ChurchDetail() {
           <dl className="public-detail-list">
             {church.patronSaint ? <div><dt>Patron saint</dt><dd>{church.patronSaint}</dd></div> : null}
             {church.status ? <div><dt>Status</dt><dd>{church.status}</dd></div> : null}
-            {church.address ? <div><dt>Address</dt><dd>{church.address}</dd></div> : null}
             {church.secretary ? <div><dt>Secretary</dt><dd>{church.secretary}</dd></div> : null}
-            {coordinates ? <div><dt>Coordinates</dt><dd>{coordinates.lat}, {coordinates.lng}</dd></div> : null}
           </dl>
-          {!church.patronSaint && !church.status && !church.address && !church.secretary && !coordinates ? <p className="parish-information-note">Information not yet available.</p> : null}
+          {!church.patronSaint && !church.status && !church.secretary ? <p className="parish-information-note">Information not yet available.</p> : null}
         </aside>
       </div>
 

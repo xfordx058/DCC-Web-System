@@ -13,10 +13,10 @@ export default function AdminYearOf() {
       storageFolder="year-of"
       exclusiveBooleanKey="isCurrent"
       fields={[
-        { key: 'name', label: 'Year name', required: true, placeholder: 'Year of Hope' },
-        { key: 'description', label: 'Description', type: 'textarea', required: true },
-        { key: 'imageUpload', label: 'Background image', type: 'file' },
-        { key: 'isCurrent', label: 'Set as current theme', type: 'checkbox' },
+        { key: 'name', label: 'Year name', required: true, placeholder: 'Year of Hope', section: 'Theme details' },
+        { key: 'description', label: 'Description', type: 'textarea', required: true, section: 'Theme details' },
+        { key: 'imageUpload', label: 'Background image', type: 'file', section: 'Public display' },
+        { key: 'isCurrent', label: 'Set as current theme', type: 'checkbox', section: 'Public display' },
       ]}
       columns={[
         { key: 'image', label: 'Image', render: item => item.image ? <SmartImage src={String(item.image)} alt="" className="admin-thumbnail" /> : <span>?</span> },

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, CalendarDays, Radio } from 'lucide-react';
+import { ArrowRight, CalendarDays, Church, Radio, UserRound, type LucideIcon } from 'lucide-react';
 import LazyIframe from '@/components/ui/LazyIframe';
 import SmartImage from '@/components/ui/SmartImage';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -41,11 +41,17 @@ function FeatureCard({
   items,
   seeMoreTo,
   loading,
+  icon: Icon,
+  emptyTitle,
+  emptyDescription,
 }: {
   label: string;
   items: FeatureEntry[];
   seeMoreTo: string;
   loading?: boolean;
+  icon: LucideIcon;
+  emptyTitle: string;
+  emptyDescription: string;
 }) {
   const images = items.map(item => item.image).filter((src): src is string => Boolean(src)).slice(0, 4);
 
@@ -94,7 +100,13 @@ function FeatureCard({
               </div>
             ))
           ) : (
-            <p className="feature-empty">No entries available.</p>
+            <EmptyState
+              compact
+              className="feature-empty-state"
+              icon={Icon}
+              title={emptyTitle}
+              description={emptyDescription}
+            />
           )}
         </div>
 
@@ -358,8 +370,24 @@ export default function Home() {
           />
         ) : (
           <div className="feature-grid">
-            <FeatureCard label="Parishes & Mission Centers" items={parishEntries} seeMoreTo="/parishes" loading={featureLoading} />
-            <FeatureCard label="Pastors & Deacons" items={clergyEntries} seeMoreTo="/clergy" loading={featureLoading} />
+            <FeatureCard
+              label="Parishes & Mission Centers"
+              items={parishEntries}
+              seeMoreTo="/parishes"
+              loading={featureLoading}
+              icon={Church}
+              emptyTitle="No parish listings yet"
+              emptyDescription="Parish and mission center profiles will appear here once added."
+            />
+            <FeatureCard
+              label="Pastors & Deacons"
+              items={clergyEntries}
+              seeMoreTo="/clergy"
+              loading={featureLoading}
+              icon={UserRound}
+              emptyTitle="No clergy listings yet"
+              emptyDescription="Clergy profiles will appear here once added."
+            />
           </div>
         )}
       </section>

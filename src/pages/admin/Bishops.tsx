@@ -13,10 +13,10 @@ export default function AdminBishops() {
       storageFolder="bishops"
       exclusiveBooleanKey="isCurrent"
       fields={[
-        { key: 'name', label: 'Name', required: true },
-        { key: 'yearInstalled', label: 'Year installed', type: 'number', required: true },
-        { key: 'imageUpload', label: 'Portrait image', type: 'file' },
-        { key: 'isCurrent', label: 'Mark as current bishop', type: 'checkbox' },
+        { key: 'name', label: 'Name', required: true, section: 'Bishop details' },
+        { key: 'yearInstalled', label: 'Year installed', type: 'number', required: true, section: 'Bishop details' },
+        { key: 'imageUpload', label: 'Portrait image', type: 'file', section: 'Portrait & status' },
+        { key: 'isCurrent', label: 'Mark as current bishop', type: 'checkbox', section: 'Portrait & status' },
       ]}
       columns={[
         { key: 'image', label: 'Portrait', render: item => item.image ? <SmartImage src={String(item.image)} alt="" className="admin-thumbnail" /> : <span>?</span> },

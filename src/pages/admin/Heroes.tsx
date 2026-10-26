@@ -12,12 +12,12 @@ export default function AdminHeroes() {
       imageKey="image"
       storageFolder="heroes"
       fields={[
-        { key: 'title', label: 'Title', required: true, placeholder: 'Diocese of Catarman' },
-        { key: 'subtitle', label: 'Subtitle', required: true, placeholder: 'Serving Faith Through Digital Connection' },
-        { key: 'caption', label: 'Supporting text', type: 'textarea' },
-        { key: 'order', label: 'Display order', type: 'number', required: true },
-        { key: 'active', label: 'Active on public website', type: 'checkbox' },
-        { key: 'image', label: 'Background image', type: 'file' },
+        { key: 'title', label: 'Title', required: true, placeholder: 'Diocese of Catarman', section: 'Slide content' },
+        { key: 'subtitle', label: 'Subtitle', required: true, placeholder: 'Serving Faith Through Digital Connection', section: 'Slide content' },
+        { key: 'caption', label: 'Supporting text', type: 'textarea', section: 'Slide content' },
+        { key: 'order', label: 'Display order', type: 'number', required: true, section: 'Display settings' },
+        { key: 'active', label: 'Active on public website', type: 'checkbox', section: 'Display settings' },
+        { key: 'image', label: 'Background image', type: 'file', section: 'Display settings' },
       ]}
       columns={[
         { key: 'image', label: 'Image', render: item => item.image ? <SmartImage className="admin-thumbnail" src={String(item.image)} alt="" /> : '?' },
