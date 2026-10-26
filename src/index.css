@@ -970,6 +970,22 @@ button {
   transform: scale(1.03);
 }
 
+.bishop-card-placeholder {
+  display: grid;
+  height: 100%;
+  place-items: center;
+  background: linear-gradient(160deg, #f7f9fc, #e2e8f0);
+}
+
+.bishop-card-placeholder span {
+  color: #0b2545;
+  font-family: var(--font-serif, serif);
+  font-size: clamp(2.6rem, 8vw, 3.6rem);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  opacity: 0.5;
+}
+
 .bishop-card-content {
   padding: 0.85rem 0 0.1rem;
 }

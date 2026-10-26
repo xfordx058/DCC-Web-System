@@ -8,7 +8,15 @@ import { resolveStreamEmbed } from '@/lib/utils';
 
 const heroFallback = [{ id: 'welcome', title: 'God is for you', subtitle: 'and so we are.' }];
 
-const bishopFallbackPhoto = 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80';
+function bishopInitials(name: unknown) {
+  return String(name || '')
+    .replace(/[^A-Za-z\s]/g, ' ')
+    .split(/\s+/)
+    .filter(word => word.length > 2)
+    .slice(-2)
+    .map(word => word[0].toUpperCase())
+    .join('');
+}
 
 const yearFallback = {
   name: 'Year of Faith',
@@ -185,12 +193,18 @@ export default function Home() {
               transition={{ duration: reducedMotion ? 0 : 0.35 }}
             >
               <div className="bishop-card-image">
-                <img
-                  src={currentBishop?.image || bishopFallbackPhoto}
-                  alt={currentBishop?.name || 'Current Bishop'}
-                  fetchPriority="high"
-                  decoding="async"
-                />
+                {currentBishop?.image ? (
+                  <img
+                    src={currentBishop.image}
+                    alt={currentBishop?.name || 'Current Bishop'}
+                    fetchPriority="high"
+                    decoding="async"
+                  />
+                ) : (
+                  <div className="bishop-card-placeholder" aria-hidden="true">
+                    <span>{bishopInitials(currentBishop?.name) || '\u271D'}</span>
+                  </div>
+                )}
               </div>
               <div className="bishop-card-content">
                 <p className="bishop-name">{String(currentBishop?.name || 'Most Rev. Emmanuel C. Trance, D.D.').toUpperCase()}</p>
