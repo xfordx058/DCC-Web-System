@@ -1,4 +1,5 @@
 import AdminCrudPage from '@/components/admin/AdminCrudPage';
+import SmartImage from '@/components/ui/SmartImage';
 
 export default function AdminBishops() {
   return (
@@ -18,7 +19,7 @@ export default function AdminBishops() {
         { key: 'isCurrent', label: 'Mark as current bishop', type: 'checkbox' },
       ]}
       columns={[
-        { key: 'image', label: 'Portrait', render: item => item.image ? <img src={item.image} alt="" className="admin-thumbnail" /> : <span>?</span> },
+        { key: 'image', label: 'Portrait', render: item => item.image ? <SmartImage src={String(item.image)} alt="" className="admin-thumbnail" /> : <span>?</span> },
         { key: 'name', label: 'Name' },
         { key: 'yearInstalled', label: 'Year installed' },
         { key: 'isCurrent', label: 'Current', render: item => <span className={`admin-status ${item.isCurrent ? 'is-active' : ''}`}>{item.isCurrent ? 'Current' : 'Previous'}</span> },

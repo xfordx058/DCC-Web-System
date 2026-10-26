@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { memo, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Banknote, ChevronLeft, ChevronRight, Menu, Smartphone, Wallet, X } from 'lucide-react';
 import LazyIframe from '@/components/ui/LazyIframe';
-import { useCurrentTime } from '@/lib/weather';
+import SmartImage from '@/components/ui/SmartImage';
+import { PublicPageSkeleton, Skeleton } from '@/components/ui/skeleton';
+import { useCurrentMinute } from '@/lib/weather';
 import { useRealtimeCollection } from '@/lib/firebase-data';
 import { useDonationMethods } from '@/lib/donations';
 import { DIOCESE_SEAL_URL } from '@/lib/brand';
@@ -29,6 +31,19 @@ function formatSectionTime(date: Date) {
   });
 }
 
+/**
+ * Isolated clock: only this node re-renders each minute instead of the whole
+ * public layout (and its realtime collections) every second.
+ */
+const HeaderClock = memo(function HeaderClock() {
+  const now = useCurrentMinute();
+  return (
+    <p className="site-meta">
+      <time dateTime={now.toISOString()}>{formatSectionTime(now)}</time>
+    </p>
+  );
+});
+
 function donationIcon(name: string) {
   const iconClass = 'donation-icon';
   switch (name?.toLowerCase()) {
@@ -41,42 +56,8 @@ function donationIcon(name: string) {
   }
 }
 
-function FacebookIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden focusable="false">
-      <path d="M13.5 21v-7.5H16l.4-3h-2.9V8.6c0-.9.3-1.5 1.6-1.5h1.4V4.4c-.3 0-1.2-.1-2.2-.1-2.2 0-3.7 1.3-3.7 3.8v2.4H8v3h2.6V21h2.9z" />
-    </svg>
-  );
-}
-
-function XIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden focusable="false">
-      <path d="M17.5 3h3l-6.6 7.5L21.7 21h-6l-4.7-6.1L5.6 21h-3l7-8L2.6 3h6.1l4.2 5.6L17.5 3zm-1 16h1.6L7.6 4.7H5.9L16.5 19z" />
-    </svg>
-  );
-}
-
-function InstagramIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
-      <rect x="3" y="3" width="18" height="18" rx="5" />
-      <circle cx="12" cy="12" r="4" />
-      <circle cx="17.3" cy="6.7" r="0.9" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
-function YoutubeIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden focusable="false">
-      <path d="M21.6 7.2s-.2-1.4-.8-2c-.7-.8-1.6-.8-2-.9C16 4.1 12 4.1 12 4.1s-4 0-6.8.2c-.4.1-1.3.1-2 .9-.6.6-.8 2-.8 2S2.2 8.8 2.2 10.5v1.6c0 1.6.2 3.3.2 3.3s.2 1.4.8 2c.7.8 1.7.7 2.1.8 1.6.2 6.7.2 6.7.2s4 0 6.8-.2c.4-.1 1.3-.1 2-.9.6-.6.8-2 .8-2s.2-1.6.2-3.3v-1.6c0-1.6-.2-3.2-.2-3.2zM9.9 14.6V8.9l5.4 2.9-5.4 2.8z" />
-    </svg>
-  );
-}
-
 function DonationCard() {
-  const { methods, loading, error } = useDonationMethods(true);
+  const { methods, loading, error, refetch } = useDonationMethods(true);
   const [index, setIndex] = useState(0);
 
   const activeIndex = Math.min(index, Math.max(methods.length - 1, 0));
@@ -92,13 +73,27 @@ function DonationCard() {
       <div className="donation-card">
         <h4 className="donation-title">Support Our Mission</h4>
         <p className="donation-sub">Scan QR code to donate</p>
-        <p className="donation-desc">
-          {loading
-            ? 'Loading donation options…'
-            : error
-            ? 'Donation options are unavailable right now. Please try again shortly.'
-            : 'Donation options will be listed here soon.'}
-        </p>
+        {loading ? (
+          <div className="donation-card-skeleton" role="status" aria-label="Loading donation options">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-28 w-28" />
+            <Skeleton className="h-3 w-full" />
+            <span className="sr-only">Loading donation options…</span>
+          </div>
+        ) : (
+          <>
+            <p className="donation-desc">
+              {error
+                ? 'Donation options are unavailable right now. Please try again shortly.'
+                : 'Donation options will be listed here soon.'}
+            </p>
+            {error ? (
+              <button type="button" className="donation-retry" onClick={() => void refetch()}>
+                Try again
+              </button>
+            ) : null}
+          </>
+        )}
         <p className="donation-note">
           <Link to="/donations">View the donation page</Link>
         </p>
@@ -116,7 +111,7 @@ function DonationCard() {
       </span>
       {active.qrImage ? (
         <div className="donation-qr">
-          <img src={active.qrImage} alt={`${active.name} QR code`} loading="lazy" />
+          <SmartImage src={active.qrImage} alt={`${active.name} QR code`} fallbackLabel={`${active.name} QR code unavailable`} />
         </div>
       ) : null}
       <p className="donation-desc">{active.description || (active.accountNumber ? `Account: ${active.accountNumber}` : '')}</p>
@@ -157,8 +152,12 @@ export default function PublicLayout() {
   const [announcementDismissed, setAnnouncementDismissed] = useState(false);
 
   const location = useLocation();
-  const currentTime = useCurrentTime();
   const { items: announcements } = useRealtimeCollection('announcements');
+
+  const mainRef = useRef<HTMLElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
+  const initialRender = useRef(true);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -181,7 +180,37 @@ export default function PublicLayout() {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, [location.pathname, location.hash]);
 
-  const formattedTime = useMemo(() => formatSectionTime(currentTime), [currentTime]);
+  // Move keyboard focus to the main region on client-side navigation so screen
+  // reader and keyboard users are not left at the top of the old page.
+  useEffect(() => {
+    if (initialRender.current) {
+      initialRender.current = false;
+      return;
+    }
+    if (location.hash) return;
+    mainRef.current?.focus({ preventScroll: true });
+  }, [location.pathname, location.hash]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMobileOpen(false);
+        menuButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    panelRef.current?.querySelector<HTMLElement>('a')?.focus();
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileOpen]);
 
   const featuredAnnouncement = useMemo(() => announcements
     .filter(item => item.active !== false && String(item.status ?? 'active').toLowerCase() !== 'inactive')
@@ -197,7 +226,7 @@ export default function PublicLayout() {
 
       {announcementText ? (
         <div className="announcement-bar" role="region" aria-label="Announcement">
-          <span>{announcementText}</span>
+          <span title={announcementText}>{announcementText}</span>
           <button
             type="button"
             className="announcement-close"
@@ -212,10 +241,12 @@ export default function PublicLayout() {
       <header className={`site-header ${scrolled ? 'scrolled' : ''}`}>
         <div className="inner">
           <Link to="/" className="site-brand" aria-label="Diocese of Catarman home">
-            <img
+            <SmartImage
               className="site-logo-img"
               src={DIOCESE_SEAL_URL}
               alt="Diocese of Catarman seal"
+              loading="eager"
+              fetchPriority="high"
             />
             <span className="site-brand-col">
               <p className="site-wordmark">Diocese of Catarman</p>
@@ -224,7 +255,7 @@ export default function PublicLayout() {
           </Link>
 
           <div className="header-right">
-            <p className="site-meta">{formattedTime}</p>
+            <HeaderClock />
 
             <nav className="nav-list" aria-label="Main navigation">
               {routeNavItems.map(item => (
@@ -240,9 +271,12 @@ export default function PublicLayout() {
             </nav>
 
             <button
+              ref={menuButtonRef}
+              type="button"
               className="mobile-menu-btn"
               aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'}
               aria-expanded={mobileOpen}
+              aria-controls="public-mobile-nav"
               onClick={() => setMobileOpen(open => !open)}
             >
               {mobileOpen ? <X size={16} aria-hidden /> : <Menu size={16} aria-hidden />}
@@ -251,42 +285,41 @@ export default function PublicLayout() {
         </div>
 
         {mobileOpen ? (
-          <div className="mobile-nav-panel" role="menu">
+          <nav
+            id="public-mobile-nav"
+            ref={panelRef}
+            className="mobile-nav-panel"
+            aria-label="Mobile navigation"
+          >
             {routeNavItems.map(item => (
-              <NavLink key={item.to} to={item.to} role="menuitem" onClick={() => setMobileOpen(false)} className="nav-link">
+              <NavLink key={item.to} to={item.to} onClick={() => setMobileOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                 {item.label}
               </NavLink>
             ))}
             {sectionNavItems.map(item => (
-              <Link key={item.hash} to={`/${item.hash}`} role="menuitem" onClick={() => setMobileOpen(false)} className="nav-link">
+              <Link key={item.hash} to={`/${item.hash}`} onClick={() => setMobileOpen(false)} className="nav-link">
                 {item.label}
               </Link>
             ))}
-          </div>
+          </nav>
         ) : null}
       </header>
 
-      <main id="main" className="py-6 md:py-8" tabIndex={-1}>
+      <main id="main" ref={mainRef} className="py-6 md:py-8" tabIndex={-1}>
         <div className="container-1200">
-          <Outlet />
+          <Suspense fallback={<PublicPageSkeleton />}>
+            <Outlet />
+          </Suspense>
         </div>
       </main>
 
       <footer id="contact" role="contentinfo" className="site-footer">
         <div className="container-1200 footer-grid">
           <div className="footer-col">
-            <div className="footer-brand">
-              <img
-                src={DIOCESE_SEAL_URL}
-                alt="Diocese of Catarman seal"
-              />
-            </div>
-            <div className="footer-social">
-              <a href="#" aria-label="Facebook" target="_blank" rel="noopener noreferrer"><FacebookIcon /></a>
-              <a href="#" aria-label="X" target="_blank" rel="noopener noreferrer"><XIcon /></a>
-              <a href="#" aria-label="Instagram" target="_blank" rel="noopener noreferrer"><InstagramIcon /></a>
-              <a href="#" aria-label="YouTube" target="_blank" rel="noopener noreferrer"><YoutubeIcon /></a>
-            </div>
+            <Link to="/" className="footer-brand" aria-label="Diocese of Catarman home">
+              <SmartImage src={DIOCESE_SEAL_URL} alt="Diocese of Catarman seal" fallbackLabel="Diocese of Catarman seal" />
+              <span><strong>Diocese of Catarman</strong><small>Northern Samar, Philippines</small></span>
+            </Link>
           </div>
 
           <div className="footer-col">
@@ -316,7 +349,7 @@ export default function PublicLayout() {
 
         <div className="footer-bottom">
           <div className="footer-bottom-inner">
-            <span>Copyright {'\u00A9'} 2026 DCC {'\u007C'} Powered by RBMDev</span>
+            <span>Copyright {'\u00A9'} {new Date().getFullYear()} DCC {'\u007C'} Powered by RBMDev</span>
           </div>
         </div>
       </footer>

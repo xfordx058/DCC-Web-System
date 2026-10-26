@@ -8,6 +8,8 @@ import { useToast } from '@/contexts/ToastContext';
 import { auth, db, ref, update, updateEmail, updatePassword, updateProfile } from '@/db/firebase';
 import { recordActivity } from '@/lib/activity-log';
 import { createAdministrator, isAdministrator, MIN_ADMIN_PASSWORD_LENGTH, useAdmins } from '@/lib/admins';
+import { SkeletonList } from '@/components/ui/skeleton';
+import { ErrorState, Spinner } from '@/components/ui/states';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -23,7 +25,7 @@ const emptyAdministratorForm: AdministratorForm = { name: '', email: '', passwor
 export default function AdminAccount() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { admins, loading: adminsLoading } = useAdmins();
+  const { admins, loading: adminsLoading, error: adminsError, refetch: refetchAdmins } = useAdmins();
 
   const [name, setName] = useState(user?.displayName ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
@@ -211,16 +213,21 @@ export default function AdminAccount() {
               </button>
             </div>
             {password && confirmPassword && password !== confirmPassword ? (
-              <small className="admin-error">Passwords do not match.</small>
+              <small className="admin-error" role="alert">Passwords do not match.</small>
             ) : null}
           </AdminField>
           <div className="admin-form-actions">
-            <Button type="submit" disabled={saving} className="gap-2">
-              <Save size={16} aria-hidden />
+            <Button type="submit" disabled={saving} className="gap-2" aria-busy={saving}>
+              {saving ? <Spinner label="Saving" /> : <Save size={16} aria-hidden />}
               {saving ? 'Saving…' : 'Save changes'}
             </Button>
             {message ? (
-              <span className={`admin-form-message ${messageTone === 'error' ? 'is-error' : 'is-success'}`}>{message}</span>
+              <span
+                className={`admin-form-message ${messageTone === 'error' ? 'is-error' : 'is-success'}`}
+                role={messageTone === 'error' ? 'alert' : 'status'}
+              >
+                {message}
+              </span>
             ) : null}
           </div>
         </div>
@@ -240,7 +247,14 @@ export default function AdminAccount() {
         </div>
 
         {adminsLoading ? (
-          <p className="admin-empty">Loading administrators…</p>
+          <SkeletonList rows={3} />
+        ) : adminsError ? (
+          <ErrorState
+            compact
+            title="Unable to load administrators"
+            description="The administrator list could not be reached. Try again."
+            onRetry={() => void refetchAdmins()}
+          />
         ) : canManageAdministrators ? (
           admins.length ? (
             <div className="admin-list">
@@ -278,7 +292,8 @@ export default function AdminAccount() {
             <Button type="button" variant="secondary" onClick={() => setAdministratorOpen(false)} disabled={creating}>
               Cancel
             </Button>
-            <Button type="submit" form="administrator-form" disabled={creating}>
+            <Button type="submit" form="administrator-form" disabled={creating} aria-busy={creating}>
+              {creating ? <Spinner className="mr-2" label="Creating administrator" /> : null}
               {creating ? 'Creating…' : 'Create administrator'}
             </Button>
           </>
@@ -289,31 +304,47 @@ export default function AdminAccount() {
             <div className="admin-input-wrap has-icon">
               <span className="admin-input-icon" aria-hidden="true"><UserRound size={16} /></span>
               <input
+                id="new-admin-name"
                 autoComplete="off"
+                aria-required="true"
+                aria-invalid={Boolean(administratorErrors.name)}
+                aria-describedby={administratorErrors.name ? 'new-admin-name-error' : undefined}
                 value={administratorForm.name}
                 onChange={event => setAdministratorForm(current => ({ ...current, name: event.target.value }))}
               />
             </div>
-            {administratorErrors.name ? <small className="admin-error">{administratorErrors.name}</small> : null}
+            {administratorErrors.name ? (
+              <small id="new-admin-name-error" className="admin-error" role="alert">{administratorErrors.name}</small>
+            ) : null}
           </AdminField>
           <AdminField label="Email address">
             <div className="admin-input-wrap has-icon">
               <span className="admin-input-icon" aria-hidden="true"><Mail size={16} /></span>
               <input
+                id="new-admin-email"
                 type="email"
                 autoComplete="off"
+                aria-required="true"
+                aria-invalid={Boolean(administratorErrors.email)}
+                aria-describedby={administratorErrors.email ? 'new-admin-email-error' : undefined}
                 value={administratorForm.email}
                 onChange={event => setAdministratorForm(current => ({ ...current, email: event.target.value }))}
               />
             </div>
-            {administratorErrors.email ? <small className="admin-error">{administratorErrors.email}</small> : null}
+            {administratorErrors.email ? (
+              <small id="new-admin-email-error" className="admin-error" role="alert">{administratorErrors.email}</small>
+            ) : null}
           </AdminField>
           <AdminField label="Password" className="admin-field-password">
             <div className="admin-input-wrap has-icon has-reveal">
               <span className="admin-input-icon" aria-hidden="true"><KeyRound size={16} /></span>
               <input
+                id="new-admin-password"
                 type={showAdministratorPassword ? 'text' : 'password'}
                 autoComplete="new-password"
+                aria-required="true"
+                aria-invalid={Boolean(administratorErrors.password)}
+                aria-describedby={administratorErrors.password ? 'new-admin-password-error' : 'new-admin-password-hint'}
                 value={administratorForm.password}
                 onChange={event => setAdministratorForm(current => ({ ...current, password: event.target.value }))}
               />
@@ -328,17 +359,21 @@ export default function AdminAccount() {
               </button>
             </div>
             {administratorErrors.password ? (
-              <small className="admin-error">{administratorErrors.password}</small>
+              <small id="new-admin-password-error" className="admin-error" role="alert">{administratorErrors.password}</small>
             ) : (
-              <small className="admin-hint">Use at least {MIN_ADMIN_PASSWORD_LENGTH} characters.</small>
+              <small id="new-admin-password-hint" className="admin-hint">Use at least {MIN_ADMIN_PASSWORD_LENGTH} characters.</small>
             )}
           </AdminField>
           <AdminField label="Confirm password" className="admin-field-password">
             <div className="admin-input-wrap has-icon has-reveal">
               <span className="admin-input-icon" aria-hidden="true"><KeyRound size={16} /></span>
               <input
+                id="new-admin-password-confirm"
                 type={showAdministratorPassword ? 'text' : 'password'}
                 autoComplete="new-password"
+                aria-required="true"
+                aria-invalid={Boolean(administratorErrors.confirmPassword)}
+                aria-describedby={administratorErrors.confirmPassword ? 'new-admin-password-confirm-error' : undefined}
                 value={administratorForm.confirmPassword}
                 onChange={event => setAdministratorForm(current => ({ ...current, confirmPassword: event.target.value }))}
               />
@@ -353,11 +388,11 @@ export default function AdminAccount() {
               </button>
             </div>
             {administratorErrors.confirmPassword ? (
-              <small className="admin-error">{administratorErrors.confirmPassword}</small>
+              <small id="new-admin-password-confirm-error" className="admin-error" role="alert">{administratorErrors.confirmPassword}</small>
             ) : null}
           </AdminField>
           {administratorErrors.form ? (
-            <p className="admin-form-message is-error admin-field-full">{administratorErrors.form}</p>
+            <p className="admin-form-message is-error admin-field-full" role="alert">{administratorErrors.form}</p>
           ) : null}
         </form>
       </AdminModal>

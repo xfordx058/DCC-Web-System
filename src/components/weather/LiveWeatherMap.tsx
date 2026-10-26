@@ -1,4 +1,4 @@
-import { useCurrentTime } from '@/lib/weather';
+import { useSecondTicker } from '@/lib/weather';
 
 export type LiveWeatherData = {
   temperature_2m?: number;
@@ -38,7 +38,7 @@ function conditionFor(code?: number, precipitation = 0) {
 }
 
 export function LiveWeatherMap({ region, weather, compact = false }: { region: string; weather?: LiveWeatherData; compact?: boolean }) {
-  const now = useCurrentTime();
+  const now = useSecondTicker();
   const precipitation = weather?.precipitation ?? 0;
   const wind = weather?.wind_speed_10m ?? 0;
   const temperature = weather?.temperature_2m;

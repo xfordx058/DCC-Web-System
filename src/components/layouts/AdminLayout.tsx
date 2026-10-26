@@ -1,11 +1,14 @@
-﻿import { useEffect, useState } from 'react';
-import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
+﻿import { Suspense, useEffect, useState, type FormEvent } from 'react';
+import { NavLink, Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { DIOCESE_SEAL_URL, DIOCESE_NAME } from '@/lib/brand';
+import { AdminPageSkeleton } from '@/components/ui/skeleton';
+import Tooltip from '@/components/ui/Tooltip';
+import SmartImage from '@/components/ui/SmartImage';
 import {
-  Activity, CalendarDays, ChevronsLeft, ChevronsRight, Church, CloudSun, ExternalLink,
+  Activity, Bell, CalendarDays, ChevronsLeft, ChevronsRight, Church, CloudSun, ExternalLink,
   FileText, Gauge, HandHeart, Image, Megaphone, Menu, Settings, ShieldCheck, UserRound,
-  UsersRound, Wrench, Radio,
+  UsersRound, Wrench, Radio, Search,
 } from 'lucide-react';
 
 const navGroups: { label: string; items: { to: string; label: string; icon: typeof Gauge; end?: boolean }[] }[] = [
@@ -51,11 +54,13 @@ const COLLAPSE_KEY = 'dcc-admin-sidebar-collapsed';
 export default function AdminLayout() {
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.localStorage.getItem(COLLAPSE_KEY) === 'true';
   });
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [globalSearch, setGlobalSearch] = useState(() => new URLSearchParams(location.search).get('search') ?? '');
 
   useEffect(() => {
     window.localStorage.setItem(COLLAPSE_KEY, String(collapsed));
@@ -64,6 +69,16 @@ export default function AdminLayout() {
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    setGlobalSearch(new URLSearchParams(location.search).get('search') ?? '');
+  }, [location.search]);
+
+  function submitGlobalSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const term = globalSearch.trim();
+    navigate(term ? `/admin?search=${encodeURIComponent(term)}` : '/admin');
+  }
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -78,27 +93,29 @@ export default function AdminLayout() {
 
   return (
     <div className={`admin-shell${collapsed ? ' is-collapsed' : ''}${mobileOpen ? ' is-mobile-open' : ''}`}>
+      <a href="#admin-main" className="skip-link">Skip to admin content</a>
       <aside className="admin-sidebar" aria-label="Administration">
         <div className="admin-brand">
           <div className="admin-brand-main">
-            <img className="admin-brand-logo" src={DIOCESE_SEAL_URL} alt={`${DIOCESE_NAME} seal`} />
+            <SmartImage className="admin-brand-logo" src={DIOCESE_SEAL_URL} alt={`${DIOCESE_NAME} seal`} loading="eager" />
             <div className="admin-brand-text">
               <strong>Diocese of Catarman</strong>
               <small>Admin Portal</small>
             </div>
           </div>
-          <button
-            type="button"
-            className="admin-sidebar-toggle"
-            onClick={() => setCollapsed(value => !value)}
-            aria-label={toggleLabel}
-            title={toggleLabel}
-          >
-            {collapsed ? <ChevronsRight size={18} /> : <ChevronsLeft size={18} />}
-          </button>
+          <Tooltip label={toggleLabel}>
+            <button
+              type="button"
+              className="admin-sidebar-toggle"
+              onClick={() => setCollapsed(value => !value)}
+              aria-label={toggleLabel}
+            >
+              {collapsed ? <ChevronsRight size={18} aria-hidden /> : <ChevronsLeft size={18} aria-hidden />}
+            </button>
+          </Tooltip>
         </div>
 
-        <nav className="admin-nav">
+        <nav className="admin-nav" aria-label="Admin sections">
           {navGroups.map(group => (
             <div key={group.label} className="admin-nav-group">
               <p className="admin-nav-label">{group.label}</p>
@@ -112,7 +129,7 @@ export default function AdminLayout() {
                     title={item.label}
                     className={({ isActive }) => (isActive ? 'is-active' : undefined)}
                   >
-                    <Icon size={17} />
+                    <Icon size={17} aria-hidden />
                     <span>{item.label}</span>
                   </NavLink>
                 );
@@ -122,7 +139,7 @@ export default function AdminLayout() {
         </nav>
 
         <div className="admin-sidebar-user" title={user?.displayName || user?.email || 'Administrator'}>
-          <span>{(user?.displayName || user?.email || 'A').slice(0, 1).toUpperCase()}</span>
+          <span aria-hidden="true">{(user?.displayName || user?.email || 'A').slice(0, 1).toUpperCase()}</span>
           <div>
             <strong>{user?.displayName || 'Administrator'}</strong>
             <small>{user?.email}</small>
@@ -136,18 +153,47 @@ export default function AdminLayout() {
 
       <div className="admin-workspace">
         <header className="admin-mobile-header">
-          <button
-            type="button"
-            className="admin-menu-btn"
-            onClick={() => setMobileOpen(true)}
-            aria-label="Open navigation"
-          >
-            <Menu size={18} />
-          </button>
+          <Tooltip label="Open navigation">
+            <button
+              type="button"
+              className="admin-menu-btn"
+              onClick={() => setMobileOpen(true)}
+              aria-label="Open navigation"
+              aria-expanded={mobileOpen}
+            >
+              <Menu size={18} aria-hidden />
+            </button>
+          </Tooltip>
           <strong>{DIOCESE_NAME}</strong>
-          <Link to="/" className="inline-flex items-center gap-1.5">Public site <ExternalLink size={13} /></Link>
+          <Link to="/" className="inline-flex items-center gap-1.5">Public site <ExternalLink size={13} aria-hidden /></Link>
         </header>
-        <main className="admin-main"><Outlet /></main>
+        <header className="admin-topbar">
+          <form className="admin-topbar-search" role="search" onSubmit={submitGlobalSearch}>
+            <Search size={17} aria-hidden="true" />
+            <input
+              type="search"
+              aria-label="Search churches, events, or priests"
+              placeholder="Search churches, events, or priests…"
+              value={globalSearch}
+              onChange={event => setGlobalSearch(event.target.value)}
+            />
+            <button type="submit" aria-label="Search admin content"><Search size={16} aria-hidden="true" /></button>
+          </form>
+          <div className="admin-topbar-actions">
+            <Link to="/admin/logs" className="admin-topbar-icon" aria-label="View notifications and activity" title="Activity and notifications">
+              <Bell size={18} aria-hidden="true" />
+            </Link>
+            <Link to="/admin/account" className="admin-topbar-profile">
+              <span aria-hidden="true">{(user?.displayName || user?.email || 'A').slice(0, 1).toUpperCase()}</span>
+              <strong>{user?.displayName || 'Profile'}</strong>
+            </Link>
+          </div>
+        </header>
+        <main id="admin-main" tabIndex={-1} className="admin-main">
+          <Suspense fallback={<AdminPageSkeleton />}>
+            <Outlet />
+          </Suspense>
+        </main>
       </div>
     </div>
   );

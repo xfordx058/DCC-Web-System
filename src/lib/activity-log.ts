@@ -59,7 +59,12 @@ export async function recordActivity({ source, action, details = '', severity = 
  * `maintenanceLogs` and `weatherEventLogs` collections so historic
  * entries stay visible after the move to unified logging.
  */
-export function useActivityLogs(): { logs: ActivityLogEntry[]; loading: boolean; error: boolean } {
+export function useActivityLogs(): {
+  logs: ActivityLogEntry[];
+  loading: boolean;
+  error: boolean;
+  refetch: () => Promise<void>;
+} {
   const activity = useRealtimeCollection('activityLogs');
   const maintenance = useRealtimeCollection('maintenanceLogs');
   const weather = useRealtimeCollection('weatherEventLogs');
@@ -111,5 +116,8 @@ export function useActivityLogs(): { logs: ActivityLogEntry[]; loading: boolean;
     logs,
     loading: activity.loading || maintenance.loading || weather.loading,
     error: activity.error || maintenance.error || weather.error,
+    refetch: async () => {
+      await Promise.all([activity.refetch(), maintenance.refetch(), weather.refetch()]);
+    },
   };
 }

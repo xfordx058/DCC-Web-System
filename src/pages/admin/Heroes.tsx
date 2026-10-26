@@ -1,4 +1,5 @@
 import AdminCrudPage from '@/components/admin/AdminCrudPage';
+import SmartImage from '@/components/ui/SmartImage';
 
 export default function AdminHeroes() {
   return (
@@ -19,7 +20,7 @@ export default function AdminHeroes() {
         { key: 'image', label: 'Background image', type: 'file' },
       ]}
       columns={[
-        { key: 'image', label: 'Image', render: item => item.image ? <img className="admin-thumbnail" src={item.image} alt="" /> : '?' },
+        { key: 'image', label: 'Image', render: item => item.image ? <SmartImage className="admin-thumbnail" src={String(item.image)} alt="" /> : '?' },
         { key: 'title', label: 'Title' },
         { key: 'subtitle', label: 'Subtitle' },
         { key: 'order', label: 'Order' },

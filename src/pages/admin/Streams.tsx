@@ -1,5 +1,6 @@
 import AdminCrudPage from '@/components/admin/AdminCrudPage';
 import { resolveStreamEmbed } from '@/lib/utils';
+import SmartImage from '@/components/ui/SmartImage';
 
 export default function AdminStreams() {
   return (
@@ -20,7 +21,7 @@ export default function AdminStreams() {
         { key: 'preview', label: 'Source', render: item => {
           const embed = resolveStreamEmbed(item.url);
           if (!embed) return '?';
-          if (embed.poster) return <img className="admin-thumbnail" src={embed.poster} alt="" />;
+          if (embed.poster) return <SmartImage className="admin-thumbnail" src={embed.poster} alt="" />;
           return <span className="admin-status is-active">{embed.provider === 'facebook' ? 'Facebook' : 'Link'}</span>;
         } },
         { key: 'title', label: 'Title' },

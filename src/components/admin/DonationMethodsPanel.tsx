@@ -1,22 +1,11 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Banknote, Pencil, Plus, Smartphone, Wallet } from 'lucide-react';
+import { FormEvent, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { Banknote, Eye, EyeOff, Pencil, Plus, Search, Smartphone, Trash2, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AdminField, useRealtimeCollection } from '@/components/admin/AdminPrimitives';
 import { AdminModal } from '@/components/admin/AdminModal';
 import { useToast } from '@/contexts/ToastContext';
 import { recordActivity } from '@/lib/activity-log';
-import {
-  db,
-  getDownloadURL,
-  push,
-  ref,
-  remove,
-  set,
-  storage,
-  storageRef,
-  update,
-  uploadBytesResumable,
-} from '@/db/firebase';
+import { db, getDownloadURL, push, ref, remove, set, storage, storageRef, update, uploadBytesResumable } from '@/db/firebase';
 import {
   donationMethodIcon,
   donationMethodTypeOptions,
@@ -24,7 +13,12 @@ import {
   normalizeDonationMethod,
   sortDonationMethods,
 } from '@/lib/donations';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
+import { SkeletonTable } from '@/components/ui/skeleton';
+import { EmptyState, ErrorState, Spinner } from '@/components/ui/states';
+import { validateImageFile } from '@/lib/uploads';
 import type { DonationMethod, DonationMethodType } from '@/types';
+import SmartImage from '@/components/ui/SmartImage';
 
 type FormState = {
   type: string;
@@ -71,15 +65,19 @@ function typeIcon(method: DonationMethod) {
 }
 
 export default function DonationMethodsPanel() {
-  const { items, loading, error } = useRealtimeCollection('donationOptions');
+  const { items, loading, error, refetch } = useRealtimeCollection('donationOptions');
   const { toast } = useToast();
+  const { confirm, confirmDialog } = useConfirm();
 
   const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<DonationMethod | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [qrFile, setQrFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [pendingIds, setPendingIds] = useState<Record<string, true>>({});
+  const [optimisticEnabled, setOptimisticEnabled] = useState<Record<string, boolean>>({});
 
   const qrPreview = useMemo(() => (qrFile ? URL.createObjectURL(qrFile) : ''), [qrFile]);
 
@@ -88,13 +86,39 @@ export default function DonationMethodsPanel() {
     return () => URL.revokeObjectURL(qrPreview);
   }, [qrPreview]);
 
-  const methods = useMemo(
+  const baseMethods = useMemo(
     () => sortDonationMethods(items.map(item => normalizeDonationMethod(item.id, item))),
     [items]
   );
 
+  // Drop optimistic overrides as soon as the realtime snapshot confirms them.
+  useEffect(() => {
+    setOptimisticEnabled(current => {
+      const entries = Object.entries(current);
+      if (!entries.length) return current;
+      const next = { ...current };
+      let dirty = false;
+      for (const [id, value] of entries) {
+        const stored = baseMethods.find(method => method.id === id);
+        if (!stored || stored.enabled === value) {
+          delete next[id];
+          dirty = true;
+        }
+      }
+      return dirty ? next : current;
+    });
+  }, [baseMethods]);
+
+  const methods = useMemo(
+    () =>
+      baseMethods.map(method =>
+        method.id in optimisticEnabled ? { ...method, enabled: optimisticEnabled[method.id] } : method
+      ),
+    [baseMethods, optimisticEnabled]
+  );
+
   const visibleMethods = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
+    const normalized = deferredQuery.trim().toLowerCase();
     if (!normalized) return methods;
     return methods.filter(method =>
       [method.name, method.type, donationTypeLabel(method.type), method.accountName, method.accountNumber, method.instructions]
@@ -102,7 +126,7 @@ export default function DonationMethodsPanel() {
         .toLowerCase()
         .includes(normalized)
     );
-  }, [methods, query]);
+  }, [methods, deferredQuery]);
 
   function openAdd() {
     setEditing(null);
@@ -136,11 +160,12 @@ export default function DonationMethodsPanel() {
     if (!form.name.trim()) return 'Enter a name for the payment method (e.g. BDO, GCash, Maya).';
     if (!form.accountName.trim()) return 'Enter the account name for this payment method.';
     if (!form.accountNumber.trim()) return 'Enter the account number or mobile number.';
-    if (qrFile && !qrFile.type.startsWith('image/')) return 'The QR code upload must be an image file.';
-    return null;
+    return validateImageFile(qrFile);
   }
 
   async function uploadQr(id: string, file: File) {
+    const invalid = validateImageFile(file);
+    if (invalid) throw new Error(invalid);
     const uploadRef = storageRef(storage, `donationOptions/${id}/${file.name}`);
     const task = uploadBytesResumable(uploadRef, file);
     await new Promise<void>((resolve, reject) => {
@@ -151,6 +176,7 @@ export default function DonationMethodsPanel() {
 
   async function handleSave(event: FormEvent) {
     event.preventDefault();
+    if (saving) return;
     const validationError = validate();
     if (validationError) {
       toast('error', validationError);
@@ -200,37 +226,66 @@ export default function DonationMethodsPanel() {
       );
     } catch (error) {
       console.error('Save payment method failed', error);
-      toast('error', 'Unable to save the payment method. Please try again.');
+      toast('error', error instanceof Error && error.message ? error.message : 'Unable to save the payment method. Please try again.');
     } finally {
       setSaving(false);
     }
   }
 
   async function toggleEnabled(method: DonationMethod) {
+    const next = !method.enabled;
+    setOptimisticEnabled(current => ({ ...current, [method.id]: next }));
+    setPendingIds(current => ({ ...current, [method.id]: true }));
+
+    const clear = () =>
+      setOptimisticEnabled(current => {
+        const nextMap = { ...current };
+        delete nextMap[method.id];
+        return nextMap;
+      });
+
+    // Safety net: if the realtime snapshot never arrives, stop pretending.
+    const failsafe = window.setTimeout(clear, 8000);
+
     try {
       await update(ref(db, `donationOptions/${method.id}`), {
-        enabled: !method.enabled,
+        enabled: next,
         updatedAt: new Date().toISOString(),
       });
       void recordActivity({
         source: 'Donations',
-        action: method.enabled ? 'Hid payment method' : 'Enabled payment method',
+        action: next ? 'Enabled payment method' : 'Hid payment method',
         details: method.name,
       });
       toast(
         'success',
-        method.enabled
-          ? `${method.name} hidden from the public donation page.`
-          : `${method.name} is now visible on the public donation page.`
+        next
+          ? `${method.name} is now visible on the public donation page.`
+          : `${method.name} hidden from the public donation page.`
       );
     } catch (error) {
       console.error('Toggle payment method failed', error);
-      toast('error', 'Unable to update the payment method. Please try again.');
+      clear();
+      toast('error', 'Unable to update the payment method. Your change was reverted — please try again.');
+    } finally {
+      window.clearTimeout(failsafe);
+      setPendingIds(current => {
+        const nextMap = { ...current };
+        delete nextMap[method.id];
+        return nextMap;
+      });
     }
   }
 
   async function handleDelete(method: DonationMethod) {
-    if (!window.confirm(`Delete ${method.name}? This removes it from the public donation page.`)) return;
+    const approved = await confirm({
+      title: `Delete ${method.name}?`,
+      description: 'This removes the payment method from the public donation page. This action cannot be undone.',
+      confirmLabel: 'Delete method',
+    });
+    if (!approved) return;
+
+    setPendingIds(current => ({ ...current, [method.id]: true }));
     try {
       await remove(ref(db, `donationOptions/${method.id}`));
       void recordActivity({
@@ -242,14 +297,32 @@ export default function DonationMethodsPanel() {
     } catch (error) {
       console.error('Delete payment method failed', error);
       toast('error', 'Unable to delete the payment method. Please try again.');
+    } finally {
+      setPendingIds(current => {
+        const nextMap = { ...current };
+        delete nextMap[method.id];
+        return nextMap;
+      });
     }
   }
 
+  const filtering = query.trim().length > 0;
+
   return (
     <>
+      {confirmDialog}
       <div className="admin-toolbar">
-        <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search payment methods…" />
-        <span>{visibleMethods.length} methods</span>
+        <div className="admin-search-field">
+          <Search size={16} aria-hidden />
+          <input
+            type="search"
+            value={query}
+            onChange={event => setQuery(event.target.value)}
+            placeholder="Search payment methods…"
+            aria-label="Search payment methods"
+          />
+        </div>
+        <span aria-live="polite">{loading ? 'Loading…' : `${visibleMethods.length} methods`}</span>
         <Button type="button" onClick={openAdd} className="gap-2">
           <Plus size={16} aria-hidden />
           Add payment method
@@ -258,67 +331,107 @@ export default function DonationMethodsPanel() {
 
       <div className="admin-table-wrap">
         {loading ? (
-          <p className="admin-empty">Loading payment methods…</p>
+          <SkeletonTable columns={5} />
         ) : error ? (
-          <p className="admin-error">Unable to load payment methods from the database. Please refresh the page and try again.</p>
+          <ErrorState
+            title="Unable to load payment methods"
+            description="The donation settings could not be reached. Check your connection and try again."
+            onRetry={() => void refetch()}
+            compact
+          />
         ) : visibleMethods.length === 0 ? (
-          <p className="admin-empty">
-            {methods.length === 0
-              ? 'No payment methods yet. Add a bank account or e-wallet to publish it on the public donation page.'
-              : 'No payment methods match your search.'}
-          </p>
+          <EmptyState
+            icon={filtering ? Search : Plus}
+            title={filtering ? `No methods match “${query.trim()}”` : 'No payment methods yet'}
+            description={
+              filtering
+                ? 'Try a different search term.'
+                : 'Add a bank account or e-wallet to publish it on the public donation page.'
+            }
+            action={
+              filtering ? (
+                <Button variant="secondary" onClick={() => setQuery('')}>Clear search</Button>
+              ) : (
+                <Button onClick={openAdd} className="gap-2">
+                  <Plus size={16} aria-hidden />
+                  Add payment method
+                </Button>
+              )
+            }
+          />
         ) : (
-          <table className="admin-table">
+          <table className="admin-table" aria-label="Payment methods">
             <thead>
               <tr>
-                <th>Payment method</th>
-                <th>Account details</th>
-                <th>QR code</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th scope="col">Payment method</th>
+                <th scope="col">Account details</th>
+                <th scope="col">QR code</th>
+                <th scope="col">Status</th>
+                <th scope="col">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {visibleMethods.map(method => (
-                <tr key={method.id}>
-                  <td>
-                    <div className="admin-table-media">
-                      <span className="admin-method-icon" aria-hidden>{typeIcon(method)}</span>
-                      <div className="admin-method-name">
-                        <strong>{method.name}</strong>
-                        <span className="admin-status">{donationTypeLabel(method.type)}</span>
+              {visibleMethods.map(method => {
+                const busy = Boolean(pendingIds[method.id]);
+                return (
+                  <tr key={method.id}>
+                    <td>
+                      <div className="admin-table-media">
+                        <span className="admin-method-icon" aria-hidden>{typeIcon(method)}</span>
+                        <div className="admin-method-name">
+                          <strong>{method.name}</strong>
+                          <span className="admin-status">{donationTypeLabel(method.type)}</span>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="admin-method-account">
-                      <span>{method.accountName || '—'}</span>
-                      <small>{method.accountNumber || 'No account number provided'}</small>
-                    </div>
-                  </td>
-                  <td>
-                    {method.qrImage ? (
-                      <img className="admin-thumbnail admin-qr-thumb" src={method.qrImage} alt={`${method.name} QR code`} />
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                  <td>
-                    <span className={`admin-status${method.enabled ? ' is-active' : ''}`}>
-                      {method.enabled ? 'Active' : 'Hidden'}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="admin-actions">
-                      <button type="button" onClick={() => openEdit(method)}>Edit</button>
-                      <button type="button" onClick={() => toggleEnabled(method)}>
-                        {method.enabled ? 'Disable' : 'Enable'}
-                      </button>
-                      <button type="button" onClick={() => handleDelete(method)}>Delete</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td>
+                      <div className="admin-method-account">
+                        <span>{method.accountName || '—'}</span>
+                        <small>{method.accountNumber || 'No account number provided'}</small>
+                      </div>
+                    </td>
+                    <td>
+                      {method.qrImage ? (
+                        <SmartImage className="admin-thumbnail admin-qr-thumb" src={method.qrImage} alt={`${method.name} QR code`} fallbackLabel="QR code unavailable" />
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td>
+                      <span className={`admin-status${method.enabled ? ' is-active' : ''}`} aria-live="polite">
+                        {method.enabled ? 'Active' : 'Hidden'}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="admin-actions">
+                        <button type="button" onClick={() => openEdit(method)} aria-label={`Edit ${method.name}`}>
+                          <Pencil size={14} aria-hidden />
+                          <span className="admin-action-text">Edit</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void toggleEnabled(method)}
+                          disabled={busy}
+                          aria-label={`${method.enabled ? 'Hide' : 'Publish'} ${method.name}`}
+                        >
+                          {method.enabled ? <EyeOff size={14} aria-hidden /> : <Eye size={14} aria-hidden />}
+                          <span className="admin-action-text">{method.enabled ? 'Hide' : 'Publish'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="is-danger"
+                          onClick={() => void handleDelete(method)}
+                          disabled={busy}
+                          aria-label={`Delete ${method.name}`}
+                        >
+                          <Trash2 size={14} aria-hidden />
+                          <span className="admin-action-text">Delete</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
@@ -338,15 +451,16 @@ export default function DonationMethodsPanel() {
         icon={editing ? <Pencil size={20} aria-hidden /> : <Plus size={20} aria-hidden />}
         footer={
           <>
-            <Button type="button" variant="secondary" onClick={closeForm}>Cancel</Button>
-            <Button type="submit" form="donation-method-form" disabled={saving}>
+            <Button type="button" variant="secondary" onClick={closeForm} disabled={saving}>Cancel</Button>
+            <Button type="submit" form="donation-method-form" disabled={saving} aria-busy={saving}>
+              {saving ? <Spinner className="mr-2" label="Saving" /> : null}
               {saving ? 'Saving…' : 'Save payment method'}
             </Button>
           </>
         }
       >
         <form id="donation-method-form" onSubmit={handleSave} className="admin-form-grid">
-          <AdminField label="Payment method type">
+          <AdminField label="Payment method type" required>
             <select required value={form.type} onChange={event => setField('type', event.target.value)}>
               <option value="">Select…</option>
               {donationMethodTypeOptions.map(option => (
@@ -355,7 +469,7 @@ export default function DonationMethodsPanel() {
             </select>
           </AdminField>
 
-          <AdminField label="Method name">
+          <AdminField label="Method name" required>
             <input
               required
               value={form.name}
@@ -364,7 +478,7 @@ export default function DonationMethodsPanel() {
             />
           </AdminField>
 
-          <AdminField label="Account name">
+          <AdminField label="Account name" required>
             <input
               required
               value={form.accountName}
@@ -373,7 +487,7 @@ export default function DonationMethodsPanel() {
             />
           </AdminField>
 
-          <AdminField label="Account number">
+          <AdminField label="Account number" required>
             <input
               required
               value={form.accountNumber}
@@ -401,23 +515,27 @@ export default function DonationMethodsPanel() {
           </AdminField>
 
           <AdminField label="QR code or payment reference image">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={event => setQrFile(event.target.files?.[0] ?? null)}
-            />
-            {(qrPreview || editing?.qrImage) ? (
-              <img
-                className="admin-method-qr-preview"
-                src={qrPreview || editing?.qrImage}
-                alt="QR code preview"
+            <div className="admin-upload">
+              {qrPreview || editing?.qrImage ? (
+                <SmartImage
+                  className="admin-method-qr-preview"
+                  src={qrPreview || editing?.qrImage}
+                  alt="QR code preview"
+                  loading="eager"
+                />
+              ) : null}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
+                onChange={event => setQrFile(event.target.files?.[0] ?? null)}
+                aria-describedby="donation-qr-hint"
               />
-            ) : null}
-            <small className="admin-hint">
-              {editing?.qrImage && !qrFile
-                ? 'A QR code is already uploaded. Choose a file to replace it.'
-                : 'Upload the GCash, Maya, or bank QR code shown to donors.'}
-            </small>
+              <small id="donation-qr-hint" className="admin-hint">
+                {editing?.qrImage && !qrFile
+                  ? 'A QR code is already uploaded. Choose a file to replace it. PNG, JPG, WebP, GIF, or AVIF · up to 5 MB.'
+                  : 'Upload the GCash, Maya, or bank QR code shown to donors. PNG, JPG, WebP, GIF, or AVIF · up to 5 MB.'}
+              </small>
+            </div>
           </AdminField>
 
           <AdminField label="Display order">

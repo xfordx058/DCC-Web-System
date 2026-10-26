@@ -1,4 +1,5 @@
 import AdminCrudPage from '@/components/admin/AdminCrudPage';
+import SmartImage from '@/components/ui/SmartImage';
 
 export default function AdminYearOf() {
   return (
@@ -18,7 +19,7 @@ export default function AdminYearOf() {
         { key: 'isCurrent', label: 'Set as current theme', type: 'checkbox' },
       ]}
       columns={[
-        { key: 'image', label: 'Image', render: item => item.image ? <img src={item.image} alt="" className="admin-thumbnail" /> : <span>?</span> },
+        { key: 'image', label: 'Image', render: item => item.image ? <SmartImage src={String(item.image)} alt="" className="admin-thumbnail" /> : <span>?</span> },
         { key: 'name', label: 'Year name' },
         { key: 'description', label: 'Description', render: item => <span className="admin-clamp">{item.description || '?'}</span> },
         { key: 'isCurrent', label: 'Status', render: item => <span className={`admin-status ${item.isCurrent ? 'is-active' : ''}`}>{item.isCurrent ? 'Current' : 'Archived'}</span> },

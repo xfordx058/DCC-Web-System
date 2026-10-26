@@ -1,40 +1,57 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import { ToastProvider } from './contexts/ToastContext';
 import PublicLayout from './components/layouts/PublicLayout';
 import Home from './pages/public/Home';
-import Clergy from './pages/public/Clergy';
-import Parishes from './pages/public/Parishes';
-import ChurchDetail from './pages/public/ChurchDetail';
-import Announcements from './pages/public/Announcements';
-import Events from './pages/public/Events';
-import Streams from './pages/public/Streams';
-import Statistics from './pages/public/Statistics';
-import YearOf from './pages/public/YearOf';
-import Contact from './pages/public/Contact';
-import PublicDonations from './pages/public/Donations';
 import Login from './pages/auth/Login';
 import { AuthProvider } from './contexts/AuthContext';
 import MaintenanceGate from './components/maintenance/MaintenanceGate';
-
-// Admin
-import AdminLayout from './components/layouts/AdminLayout';
 import RequireAuth from './components/auth/RequireAuth';
-import AdminDashboard from './pages/admin/Dashboard';
-import AdminPriests from './pages/admin/Priests';
-import AdminBishops from './pages/admin/Bishops';
-import AdminChurches from './pages/admin/Churches';
-import AdminEvents from './pages/admin/Events';
-import AdminYearOf from './pages/admin/YearOf';
-import AdminSettings from './pages/admin/Settings';
-import AdminLogs from './pages/admin/Logs';
-import AdminAccount from './pages/admin/Account';
-import AdminDonations from './pages/admin/Donations';
-import AdminHeroes from './pages/admin/Heroes';
-import AdminAnnouncements from './pages/admin/Announcements';
-import AdminStreams from './pages/admin/Streams';
-import AdminMaintenance from './pages/admin/Maintenance';
-import AdminWeather from './pages/admin/Weather';
+import NotFound from './pages/public/NotFound';
+import { Spinner } from './components/ui/states';
+
+/**
+ * Public pages are split per route so visitors only download what they view.
+ * The home page stays eager because it is the most common entry point.
+ */
+const Clergy = lazy(() => import('./pages/public/Clergy'));
+const Parishes = lazy(() => import('./pages/public/Parishes'));
+const ChurchDetail = lazy(() => import('./pages/public/ChurchDetail'));
+const Announcements = lazy(() => import('./pages/public/Announcements'));
+const Events = lazy(() => import('./pages/public/Events'));
+const Streams = lazy(() => import('./pages/public/Streams'));
+const Statistics = lazy(() => import('./pages/public/Statistics'));
+const YearOf = lazy(() => import('./pages/public/YearOf'));
+const Contact = lazy(() => import('./pages/public/Contact'));
+const PublicDonations = lazy(() => import('./pages/public/Donations'));
+
+/** The admin shell and screens are only needed after signing in. */
+const AdminLayout = lazy(() => import('./components/layouts/AdminLayout'));
+const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
+const AdminPriests = lazy(() => import('./pages/admin/Priests'));
+const AdminBishops = lazy(() => import('./pages/admin/Bishops'));
+const AdminChurches = lazy(() => import('./pages/admin/Churches'));
+const AdminEvents = lazy(() => import('./pages/admin/Events'));
+const AdminYearOf = lazy(() => import('./pages/admin/YearOf'));
+const AdminSettings = lazy(() => import('./pages/admin/Settings'));
+const AdminLogs = lazy(() => import('./pages/admin/Logs'));
+const AdminAccount = lazy(() => import('./pages/admin/Account'));
+const AdminDonations = lazy(() => import('./pages/admin/Donations'));
+const AdminHeroes = lazy(() => import('./pages/admin/Heroes'));
+const AdminAnnouncements = lazy(() => import('./pages/admin/Announcements'));
+const AdminStreams = lazy(() => import('./pages/admin/Streams'));
+const AdminMaintenance = lazy(() => import('./pages/admin/Maintenance'));
+const AdminWeather = lazy(() => import('./pages/admin/Weather'));
+
+function BootScreen({ label }: { label: string }) {
+  return (
+    <div className="route-boot" role="status" aria-live="polite">
+      <Spinner label={label} />
+      <p>{label}</p>
+    </div>
+  );
+}
 
 export default function App() {
   return (
@@ -54,14 +71,16 @@ export default function App() {
               <Route path="clergy" element={<Clergy />} />
               <Route path="parishes" element={<Parishes />} />
               <Route path="parishes/:id" element={<ChurchDetail />} />
+              <Route path="*" element={<NotFound />} />
             </Route>
 
-            {/* Admin Routes (placeholders) */}
             <Route
               path="/admin"
               element={
                 <RequireAuth>
-                  <AdminLayout />
+                  <Suspense fallback={<BootScreen label="Loading admin workspace…" />}>
+                    <AdminLayout />
+                  </Suspense>
                 </RequireAuth>
               }
             >
@@ -80,6 +99,7 @@ export default function App() {
               <Route path="account" element={<AdminAccount />} />
               <Route path="maintenance" element={<AdminMaintenance />} />
               <Route path="weather" element={<AdminWeather />} />
+              <Route path="*" element={<Navigate to="/admin" replace />} />
             </Route>
 
             <Route path="/login" element={<Login />} />

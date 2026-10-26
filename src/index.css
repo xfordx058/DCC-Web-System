@@ -2717,6 +2717,575 @@ button {
   font-size: 0.75rem;
 }
 
+.admin-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, var(--content-max-width));
+  margin: 0 auto;
+  padding: 0.8rem clamp(1.25rem, 3vw, 2.5rem);
+}
+
+.admin-topbar-search {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: min(100%, 32rem);
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  padding: 0.55rem 0.7rem;
+  color: var(--text-secondary);
+}
+
+.admin-topbar-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.82rem;
+}
+
+.admin-topbar-search button,
+.admin-topbar-icon {
+  display: inline-grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--signal);
+  cursor: pointer;
+}
+
+.admin-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.admin-topbar-profile {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  text-decoration: none;
+}
+
+.admin-topbar-profile > span {
+  display: grid;
+  width: 2.2rem;
+  height: 2.2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--navy);
+  color: #fff;
+  font-weight: 700;
+}
+
+.admin-topbar-profile strong {
+  overflow: hidden;
+  max-width: 10rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .admin-topbar {
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+  }
+
+  .admin-topbar-profile strong {
+    display: none;
+  }
+}
+
+/* Public parish detail */
+.parish-detail-page {
+  gap: clamp(1.25rem, 3vw, 2rem);
+}
+
+.parish-breadcrumbs {
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.parish-breadcrumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.parish-breadcrumbs a,
+.parish-view-all,
+.parish-directions-link {
+  color: var(--diocese-blue);
+  text-underline-offset: 3px;
+}
+
+.parish-detail-hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: flex-end;
+  min-height: clamp(250px, 38vw, 450px);
+  aspect-ratio: 21 / 9;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--gold);
+  border-radius: var(--radius-lg);
+  background: var(--navy);
+  box-shadow: var(--shadow-sm);
+}
+
+.parish-detail-image,
+.parish-detail-image-placeholder {
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.parish-detail-image-placeholder {
+  display: grid;
+  place-items: center;
+  color: rgb(255 255 255 / 48%);
+  background: linear-gradient(135deg, var(--navy), #244c76);
+}
+
+.parish-detail-hero::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(0deg, rgb(9 24 43 / 92%), rgb(9 24 43 / 12%) 75%);
+  content: '';
+}
+
+.parish-detail-hero-overlay {
+  width: 100%;
+  padding: clamp(1.25rem, 4vw, 3rem);
+  color: #fff;
+}
+
+.parish-detail-hero-overlay .parish-hero-kicker {
+  margin: 0 0 0.5rem;
+  color: #f4d48b;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.parish-detail-hero-overlay h1 {
+  max-width: 20ch;
+  margin: 0;
+  font-size: clamp(1.8rem, 5vw, 3.5rem);
+  line-height: 1.08;
+  overflow-wrap: anywhere;
+}
+
+.parish-detail-hero-overlay > p:last-child {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  max-width: 60ch;
+  margin: 0.8rem 0 0;
+  color: rgb(255 255 255 / 90%);
+  line-height: 1.55;
+}
+
+.parish-detail-hero-overlay > p:last-child svg {
+  flex: 0 0 auto;
+  margin-top: 0.15rem;
+}
+
+.parish-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(250px, 0.8fr);
+  align-items: start;
+  gap: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+.parish-detail-main {
+  display: grid;
+  min-width: 0;
+  gap: clamp(1.25rem, 3vw, 1.75rem);
+}
+
+.parish-detail-layout .public-detail-panel {
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.parish-detail-layout .public-detail-panel h2,
+.parish-section-heading h2 {
+  color: var(--navy);
+  font-size: clamp(1.15rem, 2.4vw, 1.4rem);
+  line-height: 1.25;
+}
+
+.parish-about-panel .admin-eyebrow,
+.parish-info-panel .admin-eyebrow {
+  margin: 0 0 0.4rem;
+}
+
+.parish-history-text,
+.parish-information-note {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.parish-info-panel {
+  position: sticky;
+  top: 1rem;
+}
+
+.parish-info-panel .public-detail-list {
+  gap: 1rem;
+}
+
+.parish-info-panel .public-detail-list > div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.parish-info-panel .public-detail-list dd {
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.parish-section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.parish-section-heading h2 {
+  margin: 0;
+}
+
+.parish-section-heading .admin-eyebrow {
+  margin: 0 0 0.35rem;
+}
+
+.parish-view-all,
+.parish-directions-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.parish-view-all:hover,
+.parish-directions-link:hover {
+  text-decoration: underline;
+}
+
+.parish-clergy-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.parish-clergy-card {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  padding: 0.9rem;
+}
+
+.parish-clergy-card > div {
+  min-width: 0;
+}
+
+.parish-clergy-avatar {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg-secondary);
+}
+
+.parish-clergy-placeholder {
+  display: grid;
+  place-items: center;
+  color: var(--diocese-blue);
+}
+
+.parish-role-label {
+  margin: 0 0 0.2rem;
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.parish-clergy-card h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+.parish-assistant-card ul {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0;
+  padding-left: 1rem;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.parish-location-card {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+}
+
+.parish-location-summary {
+  display: flex;
+  gap: 0.8rem;
+  padding: 1rem;
+}
+
+.parish-location-summary > div {
+  min-width: 0;
+}
+
+.parish-location-icon {
+  display: grid;
+  width: 2.4rem;
+  height: 2.4rem;
+  flex: 0 0 2.4rem;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  color: var(--diocese-blue);
+}
+
+.parish-location-summary h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.parish-location-summary p {
+  margin: 0.25rem 0 0.65rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.parish-location-summary .parish-coordinates {
+  font-size: 0.78rem;
+}
+
+.parish-location-map {
+  min-height: 260px;
+  aspect-ratio: 16 / 7;
+  border-top: 1px solid var(--border);
+}
+
+.parish-related-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.parish-related-grid .public-media-card {
+  min-width: 0;
+  border-radius: var(--radius-md);
+}
+
+.parish-related-grid .public-media-card-figure {
+  display: grid;
+  place-items: center;
+}
+
+.public-parish-placeholder {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  color: var(--diocese-blue);
+}
+
+.parish-detail-loading {
+  min-width: 0;
+}
+
+.parish-detail-hero-skeleton {
+  min-height: 250px;
+}
+
+.parish-detail-skeleton-grid {
+  display: grid;
+  grid-template-columns: 1.8fr 1fr;
+  gap: 1rem;
+}
+
+.parish-detail-skeleton-grid .public-detail-panel {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.parish-detail-page a:focus-visible,
+.site-footer a:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+/* Public footer: high contrast while retaining the existing donation card. */
+.site-footer {
+  margin-top: clamp(2.5rem, 6vw, 5rem);
+  border-top: 3px solid var(--gold);
+  background: var(--navy);
+  color: #fff;
+}
+
+.site-footer .footer-col p.footer-heading,
+.site-footer .footer-brand strong {
+  color: #fff;
+}
+
+.site-footer .footer-brand {
+  text-decoration: none;
+}
+
+.site-footer .footer-brand img {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+}
+
+.site-footer .footer-brand small,
+.site-footer .footer-blurb {
+  display: block;
+  color: #d5dfeb;
+  line-height: 1.7;
+}
+
+.site-footer .footer-links a {
+  color: #e3eaf2;
+  overflow-wrap: anywhere;
+}
+
+.site-footer .footer-links a:hover {
+  color: #f4d48b;
+}
+
+.site-footer .footer-map {
+  border-color: rgb(255 255 255 / 28%);
+  border-radius: var(--radius-md);
+}
+
+.site-footer .footer-bottom {
+  border-top-color: rgb(255 255 255 / 18%);
+}
+
+.site-footer .footer-bottom-inner {
+  color: #d5dfeb;
+}
+
+@media (max-width: 900px) {
+  .parish-detail-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .parish-info-panel {
+    position: static;
+  }
+
+  .parish-info-panel .public-detail-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .parish-info-panel .public-detail-list > div {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.65rem;
+  }
+
+  .parish-related-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .parish-detail-hero {
+    min-height: 280px;
+    aspect-ratio: 4 / 3;
+  }
+
+  .parish-detail-hero-overlay {
+    padding: 1.1rem;
+  }
+
+  .parish-clergy-grid,
+  .parish-detail-skeleton-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .parish-info-panel .public-detail-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .parish-related-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .parish-related-grid .public-media-card-figure {
+    aspect-ratio: 16 / 9;
+  }
+
+  .parish-location-map {
+    min-height: 220px;
+    aspect-ratio: 4 / 3;
+  }
+
+  .parish-section-heading {
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .parish-detail-page *,
+  .site-footer * {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
 .admin-menu-btn {
   display: inline-grid;
   width: 34px;
@@ -2926,6 +3495,18 @@ button {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   object-fit: cover;
+}
+
+.smart-img {
+  display: block;
+}
+
+.img-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--soft, #f4f6fa);
+  color: var(--text-secondary, #5a6c88);
 }
 
 .admin-clamp {
@@ -3282,6 +3863,426 @@ button {
   border: 0;
 }
 
+/* Church editor --------------------------------------------------------- */
+.church-editor-modal {
+  width: min(94vw, 50rem);
+  max-height: 90vh;
+  max-height: 90dvh;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.church-editor-modal .admin-modal-head,
+.church-editor-modal .admin-modal-foot {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+  background: #fff;
+}
+
+.church-editor-modal .admin-modal-head {
+  padding: 1.2rem 1.5rem;
+}
+
+.church-editor-modal .admin-modal-body {
+  min-height: 0;
+  flex: 1 1 auto;
+  padding: 1.25rem 1.5rem 1.5rem;
+  overscroll-behavior: contain;
+}
+
+.church-editor-modal .admin-modal-foot {
+  padding: 0.9rem 1.5rem;
+}
+
+.church-editor-modal::before {
+  background: var(--gold);
+}
+
+.church-editor-form {
+  gap: 1.1rem 1rem;
+}
+
+.church-form-section-heading {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-top: 0.4rem;
+}
+
+.church-form-section-heading:not(:first-child) {
+  padding-top: 0.35rem;
+}
+
+.church-form-section-heading h3 {
+  flex: 0 0 auto;
+  margin: 0;
+  color: var(--navy);
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.church-form-section-heading > span {
+  height: 1px;
+  flex: 1 1 auto;
+  background: var(--border);
+}
+
+.church-editor-form .admin-field {
+  min-width: 0;
+  gap: 0.45rem;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.church-editor-form .admin-field input,
+.church-editor-form .admin-field textarea,
+.church-editor-form .admin-field select {
+  min-height: 44px;
+  border-color: #d7deea;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.9rem;
+}
+
+.church-editor-form .admin-field textarea.church-history-input {
+  min-height: 138px;
+  line-height: 1.55;
+}
+
+.church-editor-form .admin-field input[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.church-editor-form .admin-field input:focus-visible,
+.church-editor-form .admin-field textarea:focus-visible,
+.church-editor-form .admin-field select:focus-visible,
+.priest-multi-control:focus-within,
+.church-image-uploader:focus-within {
+  outline: 3px solid color-mix(in srgb, var(--diocese-blue) 25%, transparent);
+  outline-offset: 2px;
+}
+
+.church-field-error {
+  display: block;
+  color: var(--danger);
+  font-size: 0.76rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.church-inline-action {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--diocese-blue);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.church-character-count {
+  align-self: flex-end;
+  margin-top: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.priest-multi-select {
+  position: relative;
+  min-width: 0;
+  font-size: 0.84rem;
+  font-weight: 400;
+}
+
+.priest-multi-control {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid #d7deea;
+  border-radius: 8px;
+  padding: 0 0.65rem;
+  color: var(--text-secondary);
+  background: #fff;
+}
+
+.priest-multi-control:focus-within {
+  border-color: var(--diocese-blue);
+  box-shadow: var(--focus-ring);
+}
+
+.priest-multi-control > svg {
+  flex: 0 0 auto;
+}
+
+.priest-multi-control input {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px !important;
+  border: 0 !important;
+  padding: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.priest-multi-toggle {
+  display: grid;
+  width: 30px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.priest-multi-toggle:hover,
+.priest-multi-toggle:focus-visible {
+  background: var(--bg-tint);
+  outline: none;
+}
+
+.priest-selected-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0;
+  margin: 0.5rem 0 0;
+  list-style: none;
+}
+
+.priest-selected-chips li {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid #dbe5f5;
+  border-radius: 999px;
+  padding: 0.1rem 0.25rem 0.1rem 0.65rem;
+  background: #f3f7fd;
+  color: var(--navy);
+  font-size: 0.73rem;
+}
+
+.priest-selected-chips button {
+  display: grid;
+  width: 23px;
+  height: 23px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.priest-selected-chips button:hover,
+.priest-selected-chips button:focus-visible {
+  background: #e4ebf5;
+  outline: 2px solid var(--diocese-blue);
+}
+
+.priest-options {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  left: 0;
+  max-height: 220px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(19, 37, 66, 0.16);
+}
+
+.priest-option {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.75rem;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.priest-option:hover,
+.priest-option:focus-within {
+  background: #f3f7fd;
+}
+
+.priest-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 1px !important;
+  border: 0 !important;
+  padding: 0 !important;
+  opacity: 0;
+}
+
+.priest-option input:focus-visible + .priest-option-check {
+  outline: 3px solid color-mix(in srgb, var(--diocese-blue) 35%, transparent);
+  outline-offset: 2px;
+}
+
+.priest-option-check {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  place-items: center;
+  border: 1px solid #b7c3d4;
+  border-radius: 4px;
+  color: #fff;
+}
+
+.priest-option input:checked + .priest-option-check {
+  border-color: var(--diocese-blue);
+  background: var(--diocese-blue);
+}
+
+.priest-options-message {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
+.priest-options-message button {
+  border: 0;
+  background: transparent;
+  color: var(--diocese-blue);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.church-image-uploader {
+  display: flex;
+  min-height: 150px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem 1rem;
+  border: 1px dashed #aebbd0;
+  border-radius: 10px;
+  padding: 1rem;
+  background: #f9fbfe;
+  text-align: center;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.church-image-uploader.is-dragging {
+  border-color: var(--diocese-blue);
+  background: #edf4ff;
+}
+
+.church-image-uploader.has-error {
+  border-color: var(--danger);
+}
+
+.church-image-file-input {
+  position: absolute;
+  width: 1px !important;
+  height: 1px !important;
+  min-height: 1px !important;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.church-image-preview {
+  width: 104px;
+  height: 78px;
+  flex: 0 0 104px;
+  border-radius: 7px;
+  object-fit: cover;
+  background: #edf1f6;
+}
+
+.church-image-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  border-radius: 50%;
+  background: #eaf0f8;
+  color: var(--diocese-blue);
+}
+
+.church-image-copy {
+  display: flex;
+  min-width: min(100%, 220px);
+  flex: 1 1 220px;
+  flex-direction: column;
+  gap: 0.25rem;
+  text-align: left;
+}
+
+.church-image-copy strong {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.church-image-copy small {
+  color: var(--text-secondary);
+  font-size: 0.73rem;
+}
+
+.church-image-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem;
+}
+
+.church-image-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.church-upload-progress {
+  position: relative;
+  width: 100%;
+  height: 22px;
+  overflow: hidden;
+  border-radius: 5px;
+  background: #e8edf5;
+  text-align: center;
+}
+
+.church-upload-progress > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: #dce9fb;
+  transition: width 160ms ease;
+}
+
+.church-upload-progress small {
+  position: relative;
+  z-index: 1;
+  color: var(--navy);
+  font-size: 0.7rem;
+  line-height: 22px;
+}
+
 @keyframes admin-modal-fade {
   from {
     opacity: 0;
@@ -3323,6 +4324,45 @@ button {
 
   .admin-modal-foot {
     padding: 0.9rem 1.1rem;
+  }
+
+  .church-editor-modal {
+    width: 100vw;
+    max-height: 100vh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+
+  .church-editor-modal .admin-modal-body {
+    padding: 1rem 1rem 1.25rem;
+  }
+
+  .church-editor-modal .admin-modal-head,
+  .church-editor-modal .admin-modal-foot {
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+
+  .church-editor-form {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.85rem;
+  }
+
+  .church-editor-form > * {
+    grid-column: 1 / -1;
+  }
+
+  .church-image-uploader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .church-image-copy {
+    text-align: center;
+  }
+
+  .church-editor-modal .admin-modal-foot > * {
+    min-width: 0;
   }
 }
 
@@ -3370,8 +4410,73 @@ button {
 /* --- Dashboard ----------------------------------------------------------- */
 .admin-stat-grid {
   display: grid !important;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 155px), 1fr));
   gap: 1rem !important;
+}
+
+.admin-inventory {
+  padding: 1.15rem 1.25rem;
+}
+
+.admin-inventory-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.admin-inventory-row {
+  display: grid;
+  grid-template-columns: minmax(7rem, 10rem) minmax(4rem, 1fr) 3rem;
+  align-items: center;
+  gap: 0.85rem;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+}
+
+.admin-inventory-row strong {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-inventory-track {
+  height: 0.55rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--soft);
+}
+
+.admin-inventory-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--signal);
+  transition: width 250ms ease;
+}
+
+.admin-inventory-note {
+  margin: 1rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+}
+
+.admin-dashboard-activity {
+  padding: 1rem 1.1rem;
+}
+
+.admin-dashboard-activity .admin-list > div {
+  justify-content: flex-start;
+}
+
+.admin-dashboard-activity .admin-list > div > svg {
+  flex: 0 0 auto;
+  color: var(--signal);
+}
+
+@media (max-width: 480px) {
+  .admin-inventory-row {
+    grid-template-columns: minmax(5.5rem, 7rem) minmax(3rem, 1fr) 2rem;
+    gap: 0.55rem;
+    font-size: 0.75rem;
+  }
 }
 
 .admin-stat {
@@ -3493,6 +4598,217 @@ button {
   grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
   gap: 1.25rem !important;
   align-items: start;
+}
+
+.admin-dashboard-grid > .admin-operations {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.admin-dashboard-grid > .admin-operations .admin-operation-card {
+  min-width: 0;
+}
+
+.admin-chart-card {
+  min-width: 0;
+}
+
+.admin-activity-chart {
+  display: block;
+  width: 100%;
+  height: 205px;
+  overflow: visible;
+}
+
+.admin-activity-chart line {
+  stroke: var(--border);
+  stroke-dasharray: 4 5;
+  stroke-width: 1;
+}
+
+.admin-activity-chart polyline {
+  fill: none;
+  stroke: var(--signal);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.admin-activity-chart circle {
+  fill: var(--surface);
+  stroke: var(--signal);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.admin-chart-axis {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+}
+
+.admin-chart-skeleton {
+  display: block;
+  width: 100%;
+  height: 205px;
+}
+
+.admin-quick-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.admin-quick-action-grid button {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.75rem;
+  color: var(--text-primary);
+  background: var(--surface);
+  text-align: left;
+  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+
+.admin-quick-action-grid button:hover {
+  border-color: var(--signal);
+  background: var(--bg-tint);
+  transform: translateY(-1px);
+}
+
+.admin-quick-action-grid button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--signal) 40%, transparent);
+  outline-offset: 2px;
+}
+
+.admin-distribution {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1rem, 4vw, 2.25rem);
+  min-height: 190px;
+}
+
+.admin-donut {
+  position: relative;
+  display: grid;
+  width: 152px;
+  height: 152px;
+  flex: 0 0 152px;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.admin-donut::before {
+  position: absolute;
+  inset: 22px;
+  border-radius: inherit;
+  background: var(--surface);
+  content: '';
+}
+
+.admin-donut > span {
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+}
+
+.admin-donut strong {
+  color: var(--text-primary);
+  font-size: 1.35rem;
+}
+
+.admin-distribution-legend {
+  display: grid;
+  gap: 0.7rem;
+  min-width: min(100%, 150px);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.admin-distribution-legend li {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
+.admin-distribution-legend li > span:first-child {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.admin-distribution-legend strong {
+  color: var(--text-primary);
+}
+
+.admin-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+.admin-dashboard-table table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.admin-dashboard-table th,
+.admin-dashboard-table td {
+  padding: 0.8rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.admin-dashboard-table th {
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.admin-dashboard-table td {
+  color: var(--text-primary);
+  font-size: 0.82rem;
+}
+
+.admin-dashboard-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.admin-status {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 0.25rem 0.55rem;
+  background: var(--bg-tint);
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.admin-search-results-page {
+  position: static;
+  z-index: auto;
+  width: 100%;
+  margin: 1rem 0;
+  box-shadow: none;
 }
 
 .admin-list {
@@ -3853,6 +5169,30 @@ button {
   .admin-split-grid,
   .admin-stat-grid {
     grid-template-columns: 1fr;
+  }
+
+  .admin-dashboard-grid > .admin-operations {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-distribution {
+    justify-content: space-around;
+    gap: 1rem;
+  }
+
+  .admin-donut {
+    width: 128px;
+    height: 128px;
+    flex-basis: 128px;
+  }
+
+  .admin-dashboard-table .admin-section-heading {
+    align-items: flex-start;
+  }
+
+  .admin-dashboard-table th,
+  .admin-dashboard-table td {
+    padding: 0.7rem;
   }
 
   .public-card-grid,

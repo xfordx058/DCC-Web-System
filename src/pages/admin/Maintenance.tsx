@@ -1,10 +1,15 @@
-﻿import { FormEvent, useEffect, useState } from 'react';
-import { ExternalLink, Plus, Save } from 'lucide-react';
+﻿import { FormEvent, useMemo, useState } from 'react';
+import { ExternalLink, Plus, Save, ShieldCheck, Trash2 } from 'lucide-react';
 import { AdminField, AdminHeader, formatDate, useRealtimeCollection, type RecordItem } from '@/components/admin/AdminPrimitives';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/contexts/ToastContext';
-import { db, onValue, push, ref, remove, set } from '@/db/firebase';
+import { db, push, ref, remove, set } from '@/db/firebase';
 import { recordActivity, useActivityLogs } from '@/lib/activity-log';
+import { useRealtimeValue } from '@/lib/firebase-data';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
+import { SkeletonList } from '@/components/ui/skeleton';
+import { EmptyState, ErrorState, Spinner } from '@/components/ui/states';
+import { safeHttpUrl } from '@/lib/urls';
 import type { MaintenanceConfig } from '@/types';
 
 const defaults: MaintenanceConfig = {
@@ -19,6 +24,8 @@ const defaults: MaintenanceConfig = {
   countdownEnabled: true,
   template: 'minimal',
 };
+
+const IPV4 = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
 
 type StatusBanner = { tone: 'active' | 'scheduled' | 'off'; label: string; note: string };
 
@@ -54,40 +61,51 @@ function statusFor(config: MaintenanceConfig, now: number): StatusBanner {
 
 export default function AdminMaintenance() {
   const { toast } = useToast();
-  const [config, setConfig] = useState<MaintenanceConfig>(defaults);
+  const { confirm, confirmDialog } = useConfirm();
+  const {
+    value: remoteConfig,
+    loading: configLoading,
+    error: configError,
+    refetch: refetchConfig,
+  } = useRealtimeValue<Record<string, unknown>>('maintenanceMode/config', {});
+  const [draft, setDraft] = useState<MaintenanceConfig | null>(null);
   const [ipAddress, setIpAddress] = useState('');
   const [saving, setSaving] = useState(false);
-  const [, setTick] = useState(0);
-  const { items: whitelist } = useRealtimeCollection('whitelistedIPs');
-  const { logs } = useActivityLogs();
+  const [addingIp, setAddingIp] = useState(false);
+  const [removingId, setRemovingId] = useState('');
+  const { items: whitelist, loading: whitelistLoading, error: whitelistError, refetch: refetchWhitelist } =
+    useRealtimeCollection('whitelistedIPs');
+  const { logs, loading: logsLoading } = useActivityLogs();
+
+  const config = useMemo<MaintenanceConfig>(
+    () => draft ?? { ...defaults, ...(remoteConfig as Partial<MaintenanceConfig>) },
+    [draft, remoteConfig]
+  );
 
   const maintenanceLogs = logs.filter(item => item.source === 'Maintenance');
-
-  useEffect(() => {
-    const stop = onValue(ref(db, 'maintenanceMode/config'), snapshot => {
-      setConfig({ ...defaults, ...(snapshot.val() ?? {}) });
-    });
-    return () => stop();
-  }, []);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setTick(value => value + 1), 30_000);
-    return () => window.clearInterval(timer);
-  }, []);
-
   const status = statusFor(config, Date.now());
+  const hasUnsavedDraft = draft !== null;
 
-  async function recordLog(action: string) {
-    await recordActivity({ source: 'Maintenance', action, details: config.reason });
+  function update(patch: Partial<MaintenanceConfig>) {
+    setDraft(current => ({ ...(current ?? { ...defaults, ...(remoteConfig as Partial<MaintenanceConfig>) }), ...patch }));
   }
 
   async function saveConfiguration(event: FormEvent) {
     event.preventDefault();
-    if (saving) return;
+    if (saving || configLoading) return;
+    if (config.supportLink && !safeHttpUrl(config.supportLink)) {
+      toast('error', 'The support link must start with http:// or https://.');
+      return;
+    }
     setSaving(true);
     try {
       await set(ref(db, 'maintenanceMode/config'), config);
-      await recordLog(config.enabled ? 'Maintenance enabled or updated' : 'Maintenance disabled or updated');
+      await recordActivity({
+        source: 'Maintenance',
+        action: config.enabled ? 'Maintenance enabled or updated' : 'Maintenance disabled or updated',
+        details: config.reason,
+      });
+      setDraft(null);
       toast('success', config.enabled ? 'Maintenance configuration saved and enabled.' : 'Maintenance configuration saved.');
     } catch (error) {
       console.error('Save maintenance configuration failed', error);
@@ -100,7 +118,12 @@ export default function AdminMaintenance() {
   async function addIp(event: FormEvent) {
     event.preventDefault();
     const value = ipAddress.trim();
-    if (!value) return;
+    if (!value || addingIp) return;
+    if (!IPV4.test(value)) {
+      toast('error', 'Enter a valid IPv4 address, e.g. 203.0.113.10.');
+      return;
+    }
+    setAddingIp(true);
     try {
       const itemRef = push(ref(db, 'whitelistedIPs'));
       await set(itemRef, value);
@@ -110,11 +133,25 @@ export default function AdminMaintenance() {
     } catch (error) {
       console.error('Add whitelist IP failed', error);
       toast('error', 'Unable to add the IP address. Please try again.');
+    } finally {
+      setAddingIp(false);
     }
   }
 
+  function ipValue(item: RecordItem) {
+    return String(item.value ?? item[String(Object.keys(item).find(key => key !== 'id') ?? '')] ?? '');
+  }
+
   async function removeIp(item: RecordItem) {
-    const value = String(item.value ?? item[String(Object.keys(item).find(key => key !== 'id') ?? '')] ?? '');
+    const value = ipValue(item);
+    const approved = await confirm({
+      title: 'Remove this IP address?',
+      description: `${value || 'This address'} will no longer bypass the maintenance screen.`,
+      confirmLabel: 'Remove IP',
+    });
+    if (!approved) return;
+
+    setRemovingId(item.id);
     try {
       await remove(ref(db, `whitelistedIPs/${item.id}`));
       toast('success', 'IP address removed from the whitelist.');
@@ -122,47 +159,227 @@ export default function AdminMaintenance() {
     } catch (error) {
       console.error('Remove whitelist IP failed', error);
       toast('error', 'Unable to remove the IP address. Please try again.');
+    } finally {
+      setRemovingId('');
     }
   }
 
   return (
     <div className="admin-page">
-      <AdminHeader title="Maintenance Mode" description="Schedule downtime, customize the public message, whitelist trusted addresses, and review the action history." action={<Button variant="secondary" onClick={() => window.open('/?maintenance-preview=1', '_blank')} className="gap-2"><ExternalLink size={16} aria-hidden /> Live preview</Button>} />
+      {confirmDialog}
+      <AdminHeader
+        title="Maintenance Mode"
+        description="Schedule downtime, customize the public message, whitelist trusted addresses, and review the action history."
+        action={
+          <Button
+            variant="secondary"
+            onClick={() => window.open('/?maintenance-preview=1', '_blank', 'noopener,noreferrer')}
+            className="gap-2"
+          >
+            <ExternalLink size={16} aria-hidden /> Live preview
+          </Button>
+        }
+      />
 
       <div className={`admin-callout is-${status.tone}`} role="status">
-        <strong>{status.label}</strong>
-        <span>{status.note}</span>
+        <strong>{configLoading ? 'Loading maintenance status…' : status.label}</strong>
+        <span>{configLoading ? 'Fetching the saved maintenance configuration.' : status.note}</span>
       </div>
 
-      <form onSubmit={saveConfiguration} className="admin-editor admin-maintenance-form">
+      {configError ? (
+        <ErrorState
+          compact
+          title="Unable to load the maintenance configuration"
+          description="Saving is disabled until the current settings load, so you do not overwrite them by accident."
+          onRetry={() => void refetchConfig()}
+        />
+      ) : null}
+
+      <form onSubmit={saveConfiguration} className="admin-editor admin-maintenance-form" aria-busy={saving}>
         <label className="maintenance-toggle">
-          <input type="checkbox" checked={config.enabled} onChange={event => setConfig(current => ({ ...current, enabled: event.target.checked }))} />
-          <span><strong>{config.enabled ? 'Maintenance mode enabled' : 'Maintenance mode disabled'}</strong><small>Activation follows the configured schedule below.</small></span>
+          <input
+            type="checkbox"
+            checked={config.enabled}
+            disabled={configLoading && !hasUnsavedDraft}
+            onChange={event => update({ enabled: event.target.checked })}
+          />
+          <span>
+            <strong>{config.enabled ? 'Maintenance mode enabled' : 'Maintenance mode disabled'}</strong>
+            <small>Activation follows the configured schedule below.</small>
+          </span>
         </label>
         <div className="admin-form-grid">
-          <AdminField label="Public message"><textarea value={config.message} onChange={event => setConfig(current => ({ ...current, message: event.target.value }))} /></AdminField>
-          <AdminField label="Maintenance reason"><textarea value={config.reason} onChange={event => setConfig(current => ({ ...current, reason: event.target.value }))} /></AdminField>
-          <AdminField label="Start time"><input type="datetime-local" value={config.startAt} onChange={event => setConfig(current => ({ ...current, startAt: event.target.value }))} /></AdminField>
-          <AdminField label="Estimated end time"><input type="datetime-local" value={config.endAt} onChange={event => setConfig(current => ({ ...current, endAt: event.target.value }))} /></AdminField>
-          <AdminField label="Contact email"><input type="email" value={config.contactEmail} onChange={event => setConfig(current => ({ ...current, contactEmail: event.target.value }))} /></AdminField>
-          <AdminField label="Contact phone"><input value={config.contactPhone} onChange={event => setConfig(current => ({ ...current, contactPhone: event.target.value }))} /></AdminField>
-          <AdminField label="Support link"><input type="url" value={config.supportLink} onChange={event => setConfig(current => ({ ...current, supportLink: event.target.value }))} /></AdminField>
-          <AdminField label="Page template"><select value={config.template} onChange={event => setConfig(current => ({ ...current, template: event.target.value }))}><option value="minimal">Minimal</option><option value="centered">Centered notice</option></select></AdminField>
-          <label className="admin-checkbox"><input type="checkbox" checked={config.countdownEnabled} onChange={event => setConfig(current => ({ ...current, countdownEnabled: event.target.checked }))} /><span>Display countdown timer</span></label>
-          <div className="admin-form-actions"><Button type="submit" disabled={saving} className="gap-2"><Save size={16} aria-hidden /> {saving ? 'Saving…' : 'Save configuration'}</Button></div>
+          <AdminField label="Public message" className="admin-field-full">
+            <textarea
+              value={config.message ?? ''}
+              disabled={configLoading && !hasUnsavedDraft}
+              onChange={event => update({ message: event.target.value })}
+            />
+          </AdminField>
+          <AdminField label="Maintenance reason" className="admin-field-full">
+            <textarea
+              value={config.reason ?? ''}
+              disabled={configLoading && !hasUnsavedDraft}
+              onChange={event => update({ reason: event.target.value })}
+            />
+            <small className="admin-hint">Recorded in the activity log for future reference.</small>
+          </AdminField>
+          <AdminField label="Start time">
+            <input
+              type="datetime-local"
+              value={config.startAt ?? ''}
+              disabled={configLoading && !hasUnsavedDraft}
+              onChange={event => update({ startAt: event.target.value })}
+            />
+          </AdminField>
+          <AdminField label="Estimated end time">
+            <input
+              type="datetime-local"
+              value={config.endAt ?? ''}
+              disabled={configLoading && !hasUnsavedDraft}
+              onChange={event => update({ endAt: event.target.value })}
+            />
+          </AdminField>
+          <AdminField label="Contact email">
+            <input
+              type="email"
+              value={config.contactEmail ?? ''}
+              disabled={configLoading && !hasUnsavedDraft}
+              onChange={event => update({ contactEmail: event.target.value })}
+            />
+          </AdminField>
+          <AdminField label="Contact phone">
+            <input
+              type="tel"
+              value={config.contactPhone ?? ''}
+              disabled={configLoading && !hasUnsavedDraft}
+              onChange={event => update({ contactPhone: event.target.value })}
+            />
+          </AdminField>
+          <AdminField label="Support link">
+            <input
+              type="url"
+              value={config.supportLink ?? ''}
+              placeholder="https://…"
+              disabled={configLoading && !hasUnsavedDraft}
+              onChange={event => update({ supportLink: event.target.value })}
+            />
+            <small className="admin-hint">Only http:// and https:// links are accepted.</small>
+          </AdminField>
+          <AdminField label="Page template">
+            <select
+              value={config.template ?? 'minimal'}
+              disabled={configLoading && !hasUnsavedDraft}
+              onChange={event => update({ template: event.target.value })}
+            >
+              <option value="minimal">Minimal</option>
+              <option value="centered">Centered notice</option>
+            </select>
+          </AdminField>
+          <label className="admin-checkbox">
+            <input
+              type="checkbox"
+              checked={Boolean(config.countdownEnabled)}
+              disabled={configLoading && !hasUnsavedDraft}
+              onChange={event => update({ countdownEnabled: event.target.checked })}
+            />
+            <span>Display countdown timer</span>
+          </label>
+          <div className="admin-form-actions">
+            <Button type="submit" disabled={saving || configLoading} className="gap-2" aria-busy={saving}>
+              {saving ? <Spinner label="Saving maintenance configuration" /> : <Save size={16} aria-hidden />}
+              {saving ? 'Saving…' : 'Save configuration'}
+            </Button>
+            {hasUnsavedDraft ? <span className="admin-form-message">Unsaved changes</span> : null}
+          </div>
         </div>
       </form>
 
       <section className="admin-split-grid">
         <div className="admin-table-section">
-          <div className="admin-section-heading"><div><p className="admin-eyebrow">Access control</p><h2>Whitelisted IPs</h2></div></div>
-          <form onSubmit={addIp} className="admin-inline-form"><input value={ipAddress} onChange={event => setIpAddress(event.target.value)} placeholder="203.0.113.10" /><Button type="submit" className="gap-2"><Plus size={16} aria-hidden /> Add IP</Button></form>
-          <div className="admin-list">{whitelist.length ? whitelist.map(item => <div key={item.id}><span>{String(item.value ?? item[String(Object.keys(item).find(key => key !== 'id') ?? '')] ?? '')}</span><button onClick={() => void removeIp(item)}>Remove</button></div>) : <p className="admin-empty">No IP addresses whitelisted.</p>}</div>
+          <div className="admin-section-heading">
+            <div>
+              <p className="admin-eyebrow">Access control</p>
+              <h2>Whitelisted IPs</h2>
+            </div>
+            <span className="admin-count-pill" aria-live="polite">{whitelist.length} addresses</span>
+          </div>
+          <form onSubmit={addIp} className="admin-inline-form">
+            <input
+              value={ipAddress}
+              onChange={event => setIpAddress(event.target.value)}
+              placeholder="203.0.113.10"
+              aria-label="IP address to whitelist"
+              inputMode="decimal"
+            />
+            <Button type="submit" className="gap-2" disabled={addingIp} aria-busy={addingIp}>
+              {addingIp ? <Spinner label="Adding IP address" /> : <Plus size={16} aria-hidden />}
+              {addingIp ? 'Adding…' : 'Add IP'}
+            </Button>
+          </form>
+          <p className="admin-hint">
+            Client-side IP checks deter accidental lockouts but are not a security boundary. Enforce access in Firebase
+            rules or a server function.
+          </p>
+          {whitelistLoading ? (
+            <SkeletonList rows={3} />
+          ) : whitelistError ? (
+            <ErrorState compact description="The whitelist could not be loaded." onRetry={() => void refetchWhitelist()} />
+          ) : whitelist.length ? (
+            <div className="admin-list">
+              {whitelist.map(item => (
+                <div key={item.id}>
+                  <span className="admin-ip-value"><ShieldCheck size={14} aria-hidden /> {ipValue(item)}</span>
+                  <button
+                    type="button"
+                    onClick={() => void removeIp(item)}
+                    disabled={removingId === item.id}
+                    aria-label={`Remove ${ipValue(item)} from the whitelist`}
+                    className="admin-link-danger"
+                  >
+                    <Trash2 size={13} aria-hidden /> {removingId === item.id ? 'Removing…' : 'Remove'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              compact
+              icon={ShieldCheck}
+              title="No IP addresses whitelisted"
+              description="Visitors from these addresses would still see the maintenance screen."
+            />
+          )}
         </div>
 
         <div className="admin-table-section">
-          <div className="admin-section-heading"><div><p className="admin-eyebrow">Audit trail</p><h2>Activity log</h2></div></div>
-          <div className="admin-list">{maintenanceLogs.length ? maintenanceLogs.slice(0, 12).map(item => <div key={item.id}><span><strong>{item.action}</strong><small>{item.admin} · {formatDate(item.createdAt)}</small></span></div>) : <p className="admin-empty">No maintenance actions recorded.</p>}</div>
+          <div className="admin-section-heading">
+            <div>
+              <p className="admin-eyebrow">Audit trail</p>
+              <h2>Activity log</h2>
+            </div>
+          </div>
+          {logsLoading ? (
+            <SkeletonList rows={3} />
+          ) : maintenanceLogs.length ? (
+            <div className="admin-list">
+              {maintenanceLogs.slice(0, 12).map(item => (
+                <div key={item.id}>
+                  <span>
+                    <strong>{item.action}</strong>
+                    <small>{item.admin} · {formatDate(item.createdAt)}</small>
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              compact
+              icon={Save}
+              title="No maintenance actions yet"
+              description="Saving the configuration or changing the whitelist records an entry here."
+            />
+          )}
         </div>
       </section>
     </div>

@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { Banknote, Check, Copy, Mail, Phone, Smartphone, Wallet } from 'lucide-react';
 import { useDonationMethods, donationTypeLabel } from '@/lib/donations';
+import { useToast } from '@/contexts/ToastContext';
+import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState, ErrorState } from '@/components/ui/states';
+import SmartImage from '@/components/ui/SmartImage';
 import type { DonationMethod } from '@/types';
 
 function methodIcon(method: DonationMethod) {
@@ -28,7 +32,8 @@ async function copyText(value: string) {
 }
 
 export default function Donations() {
-  const { methods, loading, error } = useDonationMethods(true);
+  const { methods, loading, error, refetch } = useDonationMethods(true);
+  const { toast } = useToast();
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   async function handleCopy(method: DonationMethod) {
@@ -36,8 +41,10 @@ export default function Donations() {
       await copyText(method.accountNumber);
       setCopiedId(method.id);
       window.setTimeout(() => setCopiedId(current => (current === method.id ? null : current)), 2000);
-    } catch (error) {
-      console.error('Copy account number failed', error);
+      toast('success', 'Account number copied to the clipboard.');
+    } catch (err) {
+      console.error('Copy account number failed', err);
+      toast('error', 'Unable to copy automatically. Select the account number and copy it manually.');
     }
   }
 
@@ -53,23 +60,36 @@ export default function Donations() {
       </header>
 
       {loading ? (
-        <p className="admin-empty">Loading payment methods…</p>
+        <section className="donation-method-grid" aria-label="Loading payment methods">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div className="donation-method-card" key={index} aria-hidden="true">
+              <div className="skeleton-card-body">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-6 w-40" />
+                <Skeleton className="h-40 w-full" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-2/3" />
+              </div>
+            </div>
+          ))}
+        </section>
       ) : error ? (
-        <div className="public-content-card donation-empty-card">
-          <h2>Unable to load payment methods</h2>
-          <p>
-            We could not reach the donation settings right now. Please refresh the page in a moment, or reach us at{' '}
-            <a href="mailto:diocesecatarman@gmail.com">diocesecatarman@gmail.com</a> for assistance.
-          </p>
-        </div>
+        <ErrorState
+          title="Unable to load payment methods"
+          description="We could not reach the donation settings right now. Please try again, or email diocesecatarman@gmail.com for assistance."
+          onRetry={() => void refetch()}
+        />
       ) : methods.length === 0 ? (
-        <div className="public-content-card donation-empty-card">
-          <h2>No payment methods available yet</h2>
-          <p>
-            The Diocese has not published any donation channels at the moment. Please check back soon, or reach us at{' '}
-            <a href="mailto:diocesecatarman@gmail.com">diocesecatarman@gmail.com</a> for assistance.
-          </p>
-        </div>
+        <EmptyState
+          icon={Wallet}
+          title="No payment methods available yet"
+          description="The Diocese has not published any donation channels at the moment. Please check back soon."
+          action={
+            <a href="mailto:diocesecatarman@gmail.com" className="ui-btn ui-btn-secondary">
+              Email the Diocese
+            </a>
+          }
+        />
       ) : (
         <section className="donation-method-grid" aria-label="Available payment methods">
           {methods.map(method => (
@@ -84,7 +104,11 @@ export default function Donations() {
 
               {method.qrImage ? (
                 <div className="donation-method-qr">
-                  <img src={method.qrImage} alt={`${method.name} QR code`} loading="lazy" />
+                  <SmartImage
+                    src={method.qrImage}
+                    alt={`${method.name} QR code`}
+                    fallbackLabel={`${method.name} QR code unavailable`}
+                  />
                 </div>
               ) : null}
 
@@ -109,7 +133,7 @@ export default function Donations() {
                         onClick={() => handleCopy(method)}
                       >
                         {copiedId === method.id ? <Check size={13} aria-hidden /> : <Copy size={13} aria-hidden />}
-                        <span>{copiedId === method.id ? 'Copied' : 'Copy'}</span>
+                        <span aria-live="polite">{copiedId === method.id ? 'Copied' : 'Copy'}</span>
                       </button>
                     </dd>
                   </div>

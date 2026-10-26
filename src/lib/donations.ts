@@ -66,8 +66,8 @@ export function sortDonationMethods(methods: DonationMethod[]) {
   );
 }
 
-export function useDonationMethods(activeOnly = false): { methods: DonationMethod[]; loading: boolean; error: boolean } {
-  const { items, loading, error } = useRealtimeCollection('donationOptions');
+export function useDonationMethods(activeOnly = false): { methods: DonationMethod[]; loading: boolean; error: boolean; refetch: () => Promise<void> } {
+  const { items, loading, error, refetch } = useRealtimeCollection('donationOptions');
 
   const methods = useMemo(() => {
     const normalized = items.map(item => normalizeDonationMethod(item.id, item));
@@ -75,5 +75,5 @@ export function useDonationMethods(activeOnly = false): { methods: DonationMetho
     return sortDonationMethods(visible);
   }, [items, activeOnly]);
 
-  return { methods, loading, error };
+  return { methods, loading, error, refetch };
 }

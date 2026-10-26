@@ -33,7 +33,7 @@ export default function AdminDonations() {
       />
 
       <div className="admin-tabs" role="tablist" aria-label="Donation sections">
-        {tabs.map(item => (
+        {tabs.map((item, index) => (
           <button
             key={item.id}
             type="button"
@@ -41,8 +41,17 @@ export default function AdminDonations() {
             id={`donations-tab-${item.id}`}
             aria-selected={tab === item.id}
             aria-controls={`donations-panel-${item.id}`}
+            tabIndex={tab === item.id ? 0 : -1}
             className={`admin-tab${tab === item.id ? ' is-active' : ''}`}
             onClick={() => setTab(item.id)}
+            onKeyDown={event => {
+              if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+              event.preventDefault();
+              const nextIndex = (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+              const nextTab = tabs[nextIndex];
+              setTab(nextTab.id);
+              document.getElementById(`donations-tab-${nextTab.id}`)?.focus();
+            }}
           >
             {item.label}
           </button>
@@ -88,8 +97,8 @@ export default function AdminDonations() {
               { key: 'donorName', label: 'Donor' },
               { key: 'amount', label: 'Amount', render: item => currency.format(Number(item.amount ?? 0)) },
               { key: 'date', label: 'Date', render: item => formatDate(item.date) },
-              { key: 'method', label: 'Method', render: item => String(item.method || '?').replace(/-/g, ' ') },
-              { key: 'reference', label: 'Reference', render: item => item.reference || '?' },
+              { key: 'method', label: 'Method', render: item => String(item.method || '—').replace(/-/g, ' ') },
+              { key: 'reference', label: 'Reference', render: item => item.reference || '—' },
               { key: 'status', label: 'Status', render: item => <span className={`admin-status ${item.status === 'received' || item.status === 'reconciled' ? 'is-active' : ''}`}>{item.status || 'Pending'}</span> },
             ]}
             sort={items => [...items].sort((left, right) => (Date.parse(String(right.date ?? '')) || 0) - (Date.parse(String(left.date ?? '')) || 0))}

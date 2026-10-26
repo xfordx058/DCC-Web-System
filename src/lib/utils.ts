@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { safeHttpUrl } from '@/lib/urls';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -32,8 +33,11 @@ export function resolveStreamEmbed(value: unknown): StreamEmbed | null {
     };
   }
 
-  if (/facebook\.com|fb\.watch/i.test(raw)) {
-    const normalized = raw
+  const safeUrl = safeHttpUrl(raw);
+  if (!safeUrl) return null;
+
+  if (/facebook\.com|fb\.watch/i.test(safeUrl)) {
+    const normalized = safeUrl
       .replace(/^https?:\/\/web\.facebook\.com/i, 'https://www.facebook.com')
       .replace(/^https?:\/\/m\.facebook\.com/i, 'https://www.facebook.com')
       .replace(/^https?:\/\/fb\.watch/i, 'https://www.facebook.com');
@@ -43,5 +47,5 @@ export function resolveStreamEmbed(value: unknown): StreamEmbed | null {
     };
   }
 
-  return { provider: 'generic', embedUrl: raw };
+  return { provider: 'generic', embedUrl: safeUrl };
 }

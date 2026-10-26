@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Mail, Lock, ShieldCheck, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, ShieldCheck, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { auth, firebaseSignInWithEmailAndPassword } from '@/db/firebase';
 import { setPersistence, browserLocalPersistence, browserSessionPersistence, sendPasswordResetEmail } from 'firebase/auth';
 import { DIOCESE_SEAL_URL } from '@/lib/brand';
+import SmartImage from '@/components/ui/SmartImage';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -13,11 +14,15 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [formError, setFormError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [sendingReset, setSendingReset] = useState(false);
   const [remember, setRemember] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
 
   const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -40,6 +45,7 @@ export default function Login() {
 
     setFormError('');
     setEmailError('');
+    setPasswordError('');
 
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
@@ -50,6 +56,11 @@ export default function Login() {
     if (!EMAIL_PATTERN.test(trimmedEmail)) {
       setEmailError('Please enter a valid email address.');
       emailRef.current?.focus();
+      return;
+    }
+    if (!password) {
+      setPasswordError('Please enter your password.');
+      passwordRef.current?.focus();
       return;
     }
 
@@ -69,6 +80,7 @@ export default function Login() {
   };
 
   const handleForgot = async () => {
+    if (sendingReset) return;
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
       setEmailError('Enter your email above, then request a reset link.');
@@ -80,11 +92,14 @@ export default function Login() {
       emailRef.current?.focus();
       return;
     }
+    setSendingReset(true);
     try {
       await sendPasswordResetEmail(auth, trimmedEmail);
       toast('success', 'Password reset email sent.');
     } catch {
       toast('error', 'Failed to send reset email.');
+    } finally {
+      setSendingReset(false);
     }
   };
 
@@ -92,10 +107,11 @@ export default function Login() {
     <main className="login-page">
       <section className="login-brand" aria-label="Diocese of Catarman">
         <div className="login-brand-inner">
-          <img
+          <SmartImage
             src={DIOCESE_SEAL_URL}
             alt="Coat of arms of the Diocese of Catarman"
             className="login-brand-logo"
+            loading="eager"
           />
           <h1 className="login-brand-title">Diocese of Catarman</h1>
           <p className="login-brand-text">
@@ -152,16 +168,36 @@ export default function Login() {
                 <div className="login-input-wrap">
                   <Lock className="login-input-icon" aria-hidden="true" />
                   <input
+                    ref={passwordRef}
                     id="admin-password"
                     name="password"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     autoComplete="current-password"
                     placeholder="••••••••"
                     value={password}
-                    onChange={e => setPassword(e.target.value)}
+                    onChange={e => {
+                      setPassword(e.target.value);
+                      if (passwordError) setPasswordError('');
+                    }}
                     aria-required="true"
+                    aria-invalid={passwordError ? true : undefined}
+                    aria-describedby={passwordError ? 'admin-password-error' : undefined}
                   />
+                  <button
+                    type="button"
+                    className="login-reveal"
+                    onClick={() => setShowPassword(value => !value)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-pressed={showPassword}
+                  >
+                    {showPassword ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
+                  </button>
                 </div>
+                {passwordError && (
+                  <p id="admin-password-error" className="login-error" role="alert">
+                    {passwordError}
+                  </p>
+                )}
               </div>
 
               <div className="login-row">
@@ -173,13 +209,19 @@ export default function Login() {
                   />
                   <span>Remember me</span>
                 </label>
-                <button type="button" className="login-forgot" onClick={handleForgot}>
-                  Forgot password?
+                <button
+                  type="button"
+                  className="login-forgot"
+                  onClick={handleForgot}
+                  disabled={sendingReset}
+                  aria-busy={sendingReset}
+                >
+                  {sendingReset ? 'Sending reset link…' : 'Forgot password?'}
                 </button>
               </div>
 
               {formError && (
-                <p className="login-error login-error-form" role="alert">
+                <p className="login-error login-error-form" role="alert" aria-live="assertive">
                   {formError}
                 </p>
               )}

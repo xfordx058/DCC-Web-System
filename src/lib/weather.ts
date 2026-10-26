@@ -31,37 +31,54 @@ export function useCurrentWeather(lat = CATARMAN_LAT, lon = CATARMAN_LON, fields
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
 
     const load = async () => {
       try {
-        const response = await fetch(weatherUrl(lat, lon, fields));
+        const response = await fetch(weatherUrl(lat, lon, fields), { signal: controller.signal });
         if (!response.ok) throw new Error('Weather request failed');
         const data = (await response.json()) as WeatherResponse;
-        if (!cancelled) {
-          setWeather(data.current ?? null);
-          setError(false);
-        }
+        setWeather(data.current ?? null);
+        setError(false);
       } catch {
-        if (!cancelled) {
-          setWeather(null);
-          setError(true);
-        }
+        if (controller.signal.aborted) return;
+        setWeather(null);
+        setError(true);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
 
     void load();
-    return () => {
-      cancelled = true;
-    };
+    return () => controller.abort();
   }, [lat, lon, fields]);
 
   return { weather, loading, error };
 }
 
-export function useCurrentTime() {
+export function useCurrentMinute() {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    let interval: number | undefined;
+    const tick = () => setNow(new Date());
+    // Align the first update to the next minute boundary, then tick per minute.
+    const timeout = window.setTimeout(() => {
+      tick();
+      interval = window.setInterval(tick, 60_000);
+    }, 60_000 - (Date.now() % 60_000));
+
+    return () => {
+      window.clearTimeout(timeout);
+      if (interval !== undefined) window.clearInterval(interval);
+    };
+  }, []);
+
+  return now;
+}
+
+/** Second-level ticker for the admin live-radar clock. */
+export function useSecondTicker() {
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {

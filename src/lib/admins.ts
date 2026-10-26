@@ -44,8 +44,8 @@ function getProvisioningAuth(): Auth {
   return secondaryAuth;
 }
 
-export function useAdmins(): { admins: AdminAccount[]; loading: boolean; error: boolean } {
-  const { items, loading, error } = useRealtimeCollection('admins');
+export function useAdmins(): { admins: AdminAccount[]; loading: boolean; error: boolean; refetch: () => Promise<void> } {
+  const { items, loading, error, refetch } = useRealtimeCollection('admins');
 
   const admins = useMemo(
     () =>
@@ -61,7 +61,7 @@ export function useAdmins(): { admins: AdminAccount[]; loading: boolean; error: 
     [items]
   );
 
-  return { admins, loading, error };
+  return { admins, loading, error, refetch };
 }
 
 /** Membership in the `admins` node is what makes a signed-in user an administrator. */

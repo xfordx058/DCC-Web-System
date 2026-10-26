@@ -1,4 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { ExternalLink, Play, TriangleAlert } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { safeHttpUrl } from '@/lib/urls';
+import SmartImage from '@/components/ui/SmartImage';
 
 type Props = {
   src: string;
@@ -13,49 +17,77 @@ type Props = {
 export default function LazyIframe({ src, title, className, poster, allow, onLoad, onError }: Props) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  const safeSrc = safeHttpUrl(src);
+
+  useEffect(() => {
+    setLoaded(false);
+    setFailed(false);
+  }, [src]);
 
   useEffect(() => {
     if (!ref.current) return;
     if ('IntersectionObserver' in window) {
-      const io = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((e) => {
-            if (e.isIntersecting) {
+      const observer = new IntersectionObserver(
+        entries => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
               setVisible(true);
-              io.disconnect();
+              observer.disconnect();
             }
           });
         },
         { rootMargin: '300px' }
       );
-      io.observe(ref.current);
-      return () => io.disconnect();
+      observer.observe(ref.current);
+      return () => observer.disconnect();
     }
-    // fallback
     setVisible(true);
   }, []);
 
+  const label = title || 'Embedded media';
+
   return (
-    <div ref={ref} className={className}>
-      {visible ? (
-        <iframe
-          src={src}
-          title={title}
-          className="w-full h-full"
-          loading="lazy"
-          allow={allow || 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'}
-          allowFullScreen
-          onLoad={() => onLoad?.()}
-          onError={() => onError?.()}
-        />
+    <div ref={ref} className={`lazy-frame ${className ?? ''}`}>
+      {failed || !safeSrc ? (
+        <div className="lazy-frame-error" role="status">
+          <TriangleAlert size={20} aria-hidden />
+          <strong>Media unavailable</strong>
+          <span>{failed ? 'This embedded media could not be loaded.' : 'This media link is not valid.'}</span>
+          {safeSrc ? (
+            <a href={safeSrc} target="_blank" rel="noopener noreferrer">
+              Open in a new tab <ExternalLink size={13} aria-hidden />
+            </a>
+          ) : null}
+        </div>
+      ) : visible ? (
+        <>
+          {!loaded ? <Skeleton className="lazy-frame-loading rounded-none" /> : null}
+          <iframe
+            src={safeSrc}
+            title={label}
+            className="h-full w-full"
+            loading="lazy"
+            referrerPolicy="strict-origin-when-cross-origin"
+            allow={allow || 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'}
+            allowFullScreen
+            onLoad={() => {
+              setLoaded(true);
+              onLoad?.();
+            }}
+            onError={() => {
+              setFailed(true);
+              onError?.();
+            }}
+          />
+        </>
       ) : (
-        <div className="relative w-full h-full bg-[var(--bg-secondary)] flex items-center justify-center">
-          {poster ? <img src={poster} alt={title || 'placeholder'} className="absolute inset-0 w-full h-full object-cover" /> : null}
-          <button
-            className="z-10 inline-flex items-center gap-2 rounded px-4 py-2 bg-[var(--signal)] text-[var(--bg-primary)]"
-            onClick={() => setVisible(true)}
-            aria-label={`Load ${title || 'media'}`}
-          >
+        <div className="lazy-frame-poster">
+          {poster ? <SmartImage src={poster} alt="" /> : null}
+          <button type="button" className="lazy-frame-play" onClick={() => setVisible(true)} aria-label={`Load ${label}`}>
+            <Play size={16} aria-hidden />
             Play
           </button>
         </div>

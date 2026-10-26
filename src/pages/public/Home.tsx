@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, CalendarDays, Radio } from 'lucide-react';
 import LazyIframe from '@/components/ui/LazyIframe';
+import SmartImage from '@/components/ui/SmartImage';
+import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState, ErrorState } from '@/components/ui/states';
 import { eventEndMs, formatDate, isEventActive, useRealtimeCollection } from '@/lib/firebase-data';
 import { resolveStreamEmbed } from '@/lib/utils';
 
-const heroFallback = [{ id: 'welcome', title: 'God is for you', subtitle: 'and so we are.' }];
+const heroFallback: Array<{ id: string; title: string; subtitle: string; image?: string }> = [
+  { id: 'welcome', title: 'God is for you', subtitle: 'and so we are.' },
+];
 
 function bishopInitials(name: unknown) {
   return String(name || '')
@@ -28,33 +32,58 @@ const yearFallback = {
 
 const liveStreamFallback = [
   { title: 'Catholic Church Catarman Northern Samar', url: 'https://www.youtube.com/watch?v=0aYgrX1O6Gg' },
-  { title: 'Diocese of Catarman live stream', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
 ];
 
 type FeatureEntry = { id: string; title: string; meta?: string; image?: string };
 
-function FeatureCard({ label, items, seeMoreTo }: { label: string; items: FeatureEntry[]; seeMoreTo: string }) {
+function FeatureCard({
+  label,
+  items,
+  seeMoreTo,
+  loading,
+}: {
+  label: string;
+  items: FeatureEntry[];
+  seeMoreTo: string;
+  loading?: boolean;
+}) {
   const images = items.map(item => item.image).filter((src): src is string => Boolean(src)).slice(0, 4);
 
   return (
-    <article className={`feature-card ${images.length ? '' : 'feature-card--no-collage'}`}>
+    <article className={`feature-card ${images.length || loading ? '' : 'feature-card--no-collage'}`}>
       <h3 className="feature-label">{label}</h3>
 
-      {images.length ? (
+      {loading ? (
+        <div className="feature-collage" aria-hidden="true">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Skeleton key={index} className="collage-item rounded-none" />
+          ))}
+        </div>
+      ) : images.length ? (
         <div className="feature-collage" role="img" aria-label={`${label} photo collage`}>
           {images.map((src, index) => (
-            <img key={`${src}-${index}`} className="collage-item" src={src} alt="" loading="lazy" />
+            <SmartImage key={`${src}-${index}`} className="collage-item" src={src} alt="" />
           ))}
         </div>
       ) : null}
 
       <div className="feature-body">
         <div className="feature-list">
-          {items.length ? (
+          {loading ? (
+            Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="feature-item" aria-hidden="true">
+                <Skeleton className="feature-thumb" />
+                <div className="feature-item-text">
+                  <Skeleton className="h-3 w-2/3" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              </div>
+            ))
+          ) : items.length ? (
             items.map(item => (
               <div key={item.id} className="feature-item">
                 {item.image ? (
-                  <img className="feature-thumb" src={item.image} alt="" loading="lazy" />
+                  <SmartImage className="feature-thumb" src={item.image} alt="" fallbackLabel={item.title} />
                 ) : (
                   <span className="feature-thumb-placeholder" aria-hidden />
                 )}
@@ -71,7 +100,7 @@ function FeatureCard({ label, items, seeMoreTo }: { label: string; items: Featur
 
         <div className="feature-card-footer">
           <Link to={seeMoreTo} className="section-link">
-            See more <ArrowRight size={14} />
+            See more <ArrowRight size={14} aria-hidden />
           </Link>
         </div>
       </div>
@@ -82,14 +111,23 @@ function FeatureCard({ label, items, seeMoreTo }: { label: string; items: Featur
 export default function Home() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [paused, setPaused] = useState(false);
 
-  const { items: heroes } = useRealtimeCollection('heroes');
-  const { items: bishops } = useRealtimeCollection('bishops');
-  const { items: events } = useRealtimeCollection('events');
-  const { items: churches } = useRealtimeCollection('churches');
-  const { items: priests } = useRealtimeCollection('priests');
-  const { items: yearThemes } = useRealtimeCollection('yearOf');
-  const { items: streamItems } = useRealtimeCollection('streams');
+  const bishopsResult = useRealtimeCollection('bishops');
+  const eventsResult = useRealtimeCollection('events');
+  const churchesResult = useRealtimeCollection('churches');
+  const priestsResult = useRealtimeCollection('priests');
+  const yearResult = useRealtimeCollection('yearOf');
+  const streamsResult = useRealtimeCollection('streams');
+  const heroesResult = useRealtimeCollection('heroes');
+
+  const heroes = heroesResult.items;
+  const bishops = bishopsResult.items;
+  const events = eventsResult.items;
+  const churches = churchesResult.items;
+  const priests = priestsResult.items;
+  const yearThemes = yearResult.items;
+  const streamItems = streamsResult.items;
 
   useEffect(() => {
     const query = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -110,14 +148,18 @@ export default function Home() {
   const activeSlide: Record<string, any> = slides[slideIndex] ?? heroFallback[0];
 
   useEffect(() => {
-    if (reducedMotion || slides.length < 2) return;
+    if (reducedMotion || paused || slides.length < 2) return;
     const timer = window.setInterval(() => setActiveIndex(index => index + 1), 7000);
     return () => window.clearInterval(timer);
-  }, [reducedMotion, slides.length]);
+  }, [paused, reducedMotion, slides.length]);
 
-  const upcomingEvents = useMemo(() => events
-    .filter(item => isEventActive(item.dateExpired))
-    .sort((left, right) => (eventEndMs(left.dateExpired) || 0) - (eventEndMs(right.dateExpired) || 0)), [events]);
+  const upcomingEvents = useMemo(
+    () =>
+      events
+        .filter(item => isEventActive(item.dateExpired))
+        .sort((left, right) => (eventEndMs(left.dateExpired) || 0) - (eventEndMs(right.dateExpired) || 0)),
+    [events]
+  );
 
   const currentBishop = bishops.find(item => item.isCurrent) ?? bishops[0];
   const currentYear = yearThemes.find(item => item.isCurrent) ?? yearFallback;
@@ -137,90 +179,95 @@ export default function Home() {
   const parishEntries: FeatureEntry[] = churches.slice(0, 4).map(item => ({
     id: item.id,
     title: String(item.name ?? 'Parish'),
-    meta: item.address,
-    image: item.image,
+    meta: item.address ? String(item.address) : undefined,
+    image: item.image ? String(item.image) : undefined,
   }));
 
-  const clergyEntries: FeatureEntry[] = priests.slice(0, 4).map(item => ({
+  const clergyEntries: FeatureEntry[] = priests
+    .filter(item => String(item.status ?? 'active').toLowerCase() !== 'inactive')
+    .slice(0, 4)
+    .map(item => ({
     id: item.id,
     title: String(item.name ?? 'Priest'),
-    meta: item.assignment,
-    image: item.photo,
-  }));
+    meta: item.assignment ? String(item.assignment) : undefined,
+    image: item.photo ? String(item.photo) : undefined,
+    }));
+
+  const churchError = churchesResult.error || priestsResult.error;
+  const featureLoading = churchesResult.loading || priestsResult.loading;
 
   return (
     <div className="home">
-      <section className="home-hero" aria-label="Welcome to the Diocese of Catarman">
+      <section
+        className="home-hero"
+        aria-label="Welcome to the Diocese of Catarman"
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+        onFocusCapture={() => setPaused(true)}
+        onBlurCapture={event => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setPaused(false);
+        }}
+      >
         <div className="hero-bg" aria-hidden="true">
-          <AnimatePresence mode="wait">
-            {activeSlide.image ? (
-              <motion.div
-                key={`bg-${slideIndex}-${activeSlide.id ?? activeSlide.title}`}
-                className="hero-photo"
-                style={{ backgroundImage: `url("${activeSlide.image}")` }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: reducedMotion ? 0 : 0.6 }}
+          {slides.map((slide, index) =>
+            slide.image ? (
+              <div
+                key={String(slide.id ?? slide.title ?? index)}
+                className={`hero-photo${index === slideIndex ? ' is-active' : ''}`}
+                style={{ backgroundImage: `url("${String(slide.image)}")` }}
               />
-            ) : null}
-          </AnimatePresence>
+            ) : null
+          )}
         </div>
 
         <div className="hero-message">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`${slideIndex}-${activeSlide.id ?? activeSlide.title}`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: reducedMotion ? 0 : 0.45 }}
-            >
-              <h1>{activeSlide.title}</h1>
-              {activeSlide.subtitle ? <span className="hero-sub">{activeSlide.subtitle}</span> : null}
-            </motion.div>
-          </AnimatePresence>
+          <div key={`${slideIndex}-${activeSlide.id ?? activeSlide.title}`} className="hero-message-inner">
+            <h1>{activeSlide.title}</h1>
+            {activeSlide.subtitle ? <span className="hero-sub">{activeSlide.subtitle}</span> : null}
+          </div>
         </div>
 
-        <AnimatePresence initial={false}>
-          {slideIndex === 0 ? (
-            <motion.article
-              key="bishop-card"
-              className="bishop-card"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: reducedMotion ? 0 : 0.35 }}
-            >
-              <div className="bishop-card-image">
-                {currentBishop?.image ? (
-                  <img
-                    src={currentBishop.image}
-                    alt={currentBishop?.name || 'Current Bishop'}
-                    fetchPriority="high"
-                    decoding="async"
-                  />
-                ) : (
-                  <div className="bishop-card-placeholder" aria-hidden="true">
-                    <span>{bishopInitials(currentBishop?.name) || '\u271D'}</span>
-                  </div>
-                )}
-              </div>
-              <div className="bishop-card-content">
-                <p className="bishop-name">{String(currentBishop?.name || 'Most Rev. Emmanuel C. Trance, D.D.').toUpperCase()}</p>
-                <div className="bishop-rule" />
-                <p className="bishop-role">Current Bishop</p>
-                <p className="bishop-meta">Installed: {currentBishop?.yearInstalled || '\u2014'}</p>
-              </div>
-            </motion.article>
-          ) : null}
-        </AnimatePresence>
+        {slideIndex === 0 ? (
+          <article className="bishop-card hero-fade">
+            <div className="bishop-card-image">
+              {currentBishop?.image ? (
+                <SmartImage
+                  src={String(currentBishop.image)}
+                  alt={String(currentBishop.name || 'Current Bishop')}
+                  loading="eager"
+                  fetchPriority="high"
+                  fallbackLabel="Bishop portrait unavailable"
+                />
+              ) : (
+                <div className="bishop-card-placeholder" aria-hidden="true">
+                  <span>{bishopInitials(currentBishop?.name) || '\u271D'}</span>
+                </div>
+              )}
+            </div>
+            <div className="bishop-card-content">
+              {bishopsResult.loading ? (
+                <>
+                  <Skeleton className="h-3 w-40" />
+                  <Skeleton className="h-2 w-16" />
+                  <Skeleton className="h-3 w-24" />
+                </>
+              ) : (
+                <>
+                  <p className="bishop-name">{String(currentBishop?.name || 'Most Rev. Emmanuel C. Trance, D.D.').toUpperCase()}</p>
+                  <div className="bishop-rule" />
+                  <p className="bishop-role">Current Bishop</p>
+                  <p className="bishop-meta">Installed: {currentBishop?.yearInstalled || '\u2014'}</p>
+                </>
+              )}
+            </div>
+          </article>
+        ) : null}
 
         {slides.length > 1 ? (
           <div className="hero-dots" role="group" aria-label="Hero slides">
             {slides.map((slide, index) => (
               <button
-                key={slide.id ?? index}
+                key={String(slide.id ?? index)}
                 type="button"
                 className="hero-dot"
                 aria-label={`Show slide ${index + 1}`}
@@ -236,17 +283,41 @@ export default function Home() {
         <div className="section-heading">
           <h2 id="latest-heading">Latest events</h2>
           <Link to="/events" className="section-link">
-            See all events <ArrowRight size={14} />
+            See all events <ArrowRight size={14} aria-hidden />
           </Link>
         </div>
 
-        {upcomingEvents.length ? (
+        {eventsResult.loading ? (
+          <div className="event-grid" aria-hidden="true">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <article className="event-card" key={index}>
+                <Skeleton className="aspect-video w-full rounded-none" />
+                <div className="event-body">
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : eventsResult.error ? (
+          <ErrorState
+            compact
+            title="Unable to load the latest events"
+            description="The diocesan calendar could not be reached."
+            onRetry={() => void eventsResult.refetch()}
+          />
+        ) : upcomingEvents.length ? (
           <div className="event-grid">
             {upcomingEvents.map(event => (
               <article key={event.id} className="event-card">
                 {event.image ? (
                   <div className="event-image">
-                    <img src={event.image} alt={String(event.title ?? 'Diocese event')} loading="lazy" />
+                    <SmartImage
+                      src={String(event.image)}
+                      alt={String(event.title ?? 'Diocese event')}
+                      fallbackLabel="Event image unavailable"
+                    />
                   </div>
                 ) : null}
                 <div className="event-body">
@@ -258,7 +329,17 @@ export default function Home() {
             ))}
           </div>
         ) : (
-          <p className="events-empty">No latest news or events.</p>
+          <EmptyState
+            compact
+            icon={CalendarDays}
+            title="No upcoming events"
+            description="New masses and diocesan celebrations will appear here once scheduled."
+            action={
+              <Link to="/events" className="ui-btn ui-btn-secondary">
+                View the calendar
+              </Link>
+            }
+          />
         )}
       </section>
 
@@ -266,30 +347,63 @@ export default function Home() {
         <div className="section-heading">
           <h2 id="parish-heading">Parishes and mission centers</h2>
         </div>
-        <div className="feature-grid">
-          <FeatureCard label="Parishes & Mission Centers" items={parishEntries} seeMoreTo="/parishes" />
-          <FeatureCard label="Pastors & Deacons" items={clergyEntries} seeMoreTo="/clergy" />
-        </div>
+        {churchError && !featureLoading ? (
+          <ErrorState
+            compact
+            title="Unable to load parishes and clergy"
+            description="The directory could not be reached."
+            onRetry={async () => {
+              await Promise.all([churchesResult.refetch(), priestsResult.refetch()]);
+            }}
+          />
+        ) : (
+          <div className="feature-grid">
+            <FeatureCard label="Parishes & Mission Centers" items={parishEntries} seeMoreTo="/parishes" loading={featureLoading} />
+            <FeatureCard label="Pastors & Deacons" items={clergyEntries} seeMoreTo="/clergy" loading={featureLoading} />
+          </div>
+        )}
       </section>
 
       <section aria-labelledby="streams-heading">
         <div className="section-heading">
           <h2 id="streams-heading">Live streams</h2>
+          <Link to="/streams" className="section-link">
+            All streams <ArrowRight size={14} aria-hidden />
+          </Link>
         </div>
-        <div className="video-grid">
-          {liveStreams.map(stream => (
-            <article key={stream.key} className="video-card">
-              <div className="video-figure">
-                <LazyIframe
-                  className="w-full h-full"
-                  src={stream.embed!.embedUrl}
-                  title={stream.title}
-                  poster={stream.embed!.poster}
-                />
-              </div>
-            </article>
-          ))}
-        </div>
+        {streamsResult.loading ? (
+          <div className="video-grid" aria-hidden="true">
+            {Array.from({ length: 2 }).map((_, index) => (
+              <article className="video-card" key={index}>
+                <Skeleton className="aspect-video w-full rounded-none" />
+              </article>
+            ))}
+          </div>
+        ) : streamsResult.error ? (
+          <ErrorState compact title="Unable to load live streams" description="The stream list could not be reached." onRetry={() => void streamsResult.refetch()} />
+        ) : liveStreams.length ? (
+          <div className="video-grid">
+            {liveStreams.map(stream => (
+              <article key={stream.key} className="video-card">
+                <div className="video-figure">
+                  <LazyIframe
+                    className="w-full h-full"
+                    src={stream.embed!.embedUrl}
+                    title={stream.title}
+                    poster={stream.embed!.poster}
+                  />
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            compact
+            icon={Radio}
+            title="No live streams scheduled"
+            description="Live mass and diocesan celebrations will be shared here."
+          />
+        )}
       </section>
 
       <section id="year-of-faith" aria-labelledby="year-heading">
@@ -298,11 +412,15 @@ export default function Home() {
         </h2>
         <div className="year-feature">
           <div className="year-image">
-            <img
-              src={currentYear.image || yearFallback.image}
-              alt={String(currentYear.name || currentYear.title || 'Year of Faith')}
-              loading="lazy"
-            />
+            {yearResult.loading ? (
+              <Skeleton className="h-full w-full rounded-none" />
+            ) : (
+              <SmartImage
+                src={String(currentYear.image || yearFallback.image)}
+                alt={String(currentYear.name || currentYear.title || 'Year of Faith')}
+                fallbackLabel="Year theme image unavailable"
+              />
+            )}
           </div>
           <div className="year-body">
             <p>{currentYear.description}</p>

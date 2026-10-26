@@ -65,10 +65,23 @@ export function AdminHeader({
   );
 }
 
-export function AdminField({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
+export function AdminField({
+  label,
+  children,
+  className,
+  required = false,
+}: {
+  label: string;
+  children: ReactNode;
+  className?: string;
+  required?: boolean;
+}) {
   return (
     <label className={cn('admin-field', className)}>
-      <span>{label}</span>
+      <span>
+        {label}
+        {required ? <span className="admin-required" aria-hidden="true"> *</span> : null}
+      </span>
       {children}
     </label>
   );

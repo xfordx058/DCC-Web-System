@@ -1,11 +1,15 @@
-import { useRealtimeCollection } from '@/components/admin/AdminPrimitives';
+import { Link } from 'react-router-dom';
+import { UsersRound } from 'lucide-react';
+import { useRealtimeCollection } from '@/lib/firebase-data';
 import { SkeletonGrid } from '@/components/ui/skeleton';
+import { EmptyState, ErrorState } from '@/components/ui/states';
+import SmartImage from '@/components/ui/SmartImage';
 import type { Priest } from '@/types';
 
 export default function Clergy() {
-  const { items: priests, loading } = useRealtimeCollection('priests');
+  const { items: priests, loading, error, refetch } = useRealtimeCollection('priests');
   const clergy = priests
-    .filter(item => item.name)
+    .filter(item => item.name && String(item.status ?? 'active').toLowerCase() !== 'inactive')
     .sort((a, b) => String(a.name).localeCompare(String(b.name))) as Priest[];
 
   return (
@@ -18,15 +22,30 @@ export default function Clergy() {
 
       {loading ? (
         <SkeletonGrid count={6} />
+      ) : error ? (
+        <ErrorState
+          title="Unable to load the clergy directory"
+          description="The list of priests could not be reached. Check your connection and try again."
+          onRetry={() => void refetch()}
+        />
       ) : clergy.length === 0 ? (
-        <p className="admin-empty">No clergy members found.</p>
+        <EmptyState
+          icon={UsersRound}
+          title="No clergy profiles available"
+          description="Priest profiles will appear here once they are published by the Diocese."
+          action={
+            <Link to="/parishes" className="ui-btn ui-btn-secondary">
+              Browse parishes
+            </Link>
+          }
+        />
       ) : (
-        <section className="public-card-grid">
+        <section className="public-card-grid" aria-label="Clergy">
           {clergy.map(person => (
             <article key={person.id} className="public-media-card">
               {person.photo ? (
                 <div className="public-media-card-figure">
-                  <img src={person.photo} alt={person.name} loading="lazy" />
+                  <SmartImage src={person.photo} alt={person.name || 'Priest'} fallbackLabel="Priest photo unavailable" />
                 </div>
               ) : null}
               <div className="public-media-card-body">
