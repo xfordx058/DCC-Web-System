@@ -4,7 +4,6 @@ import { ExternalLink, Mail, MapPin, Menu, Phone, X } from 'lucide-react';
 import LazyIframe from '@/components/ui/LazyIframe';
 import SmartImage from '@/components/ui/SmartImage';
 import { PublicPageSkeleton } from '@/components/ui/skeleton';
-import { useCurrentMinute } from '@/lib/weather';
 import { useRealtimeCollection } from '@/lib/firebase-data';
 import { DIOCESE_SEAL_URL } from '@/lib/brand';
 
@@ -26,16 +25,23 @@ function formatSectionTime(date: Date) {
   return date.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
+    second: '2-digit',
     hour12: true,
   });
 }
 
 /**
- * Isolated clock: only this node re-renders each minute instead of the whole
+ * Isolated clock: only this node re-renders each second instead of the whole
  * public layout (and its realtime collections) every second.
  */
 const HeaderClock = memo(function HeaderClock() {
-  const now = useCurrentMinute();
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(interval);
+  }, []);
+
   return (
     <p className="site-meta">
       <time dateTime={now.toISOString()}>{formatSectionTime(now)}</time>
@@ -211,17 +217,29 @@ export default function PublicLayout() {
       </main>
 
       <footer id="contact" role="contentinfo" className="site-footer">
+        <div className="footer-masthead" aria-label="Diocese of Catarman">
+          <p>DIOCESE OF CATARMAN</p>
+          <span aria-hidden="true" />
+        </div>
         <div className="container-1200 footer-grid">
           <div className="footer-col">
+            <p className="footer-heading">Diocese of Catarman</p>
             <Link to="/" className="footer-brand" aria-label="Diocese of Catarman home">
               <SmartImage src={DIOCESE_SEAL_URL} alt="Diocese of Catarman seal" fallbackLabel="Diocese of Catarman seal" />
               <span><strong>Diocese of Catarman</strong><small>Northern Samar, Philippines</small></span>
             </Link>
             <p className="footer-intro">Stay connected with the life and work of the Diocese.</p>
+          </div>
+
+          <div className="footer-col">
+            <p className="footer-heading">Explore</p>
             <nav className="footer-explore-links" aria-label="Explore the website">
               <Link to="/parishes">Parishes</Link>
+              <Link to="/clergy">Clergy</Link>
               <Link to="/events">Events</Link>
               <Link to="/announcements">Latest updates</Link>
+              <Link to="/streams">Live streams</Link>
+              <Link to="/year-of">Year Of</Link>
             </nav>
           </div>
 
@@ -235,18 +253,18 @@ export default function PublicLayout() {
           </div>
 
           <div className="footer-col">
-            <p className="footer-heading">Address</p>
+            <p className="footer-heading">Find us</p>
             <div className="footer-location-card">
               <p className="footer-blurb footer-address">
                 <MapPin size={16} aria-hidden="true" />
                 <span><strong>Our Lady of the Annunciation Cathedral</strong><small>DCC Cathedral Compound,<br />Catarman, Northern Samar</small></span>
               </p>
-            <div className="footer-map">
-              <LazyIframe
-                src="https://www.google.com/maps?q=12.4986944%2C124.6365&z=16&output=embed"
-                title="Catarman Cathedral map"
-              />
-            </div>
+              <div className="footer-map">
+                <LazyIframe
+                  src="https://www.google.com/maps?q=12.4986944%2C124.6365&z=16&output=embed"
+                  title="Catarman Cathedral map"
+                />
+              </div>
               <a className="footer-map-link" href="https://www.google.com/maps/search/?api=1&query=12.4986944%2C124.6365" target="_blank" rel="noopener noreferrer">
                 Open in Google Maps <ExternalLink size={13} aria-hidden="true" />
               </a>
@@ -257,7 +275,8 @@ export default function PublicLayout() {
 
         <div className="footer-bottom">
           <div className="footer-bottom-inner">
-            <span>Copyright {'\u00A9'} {new Date().getFullYear()} DCC {'\u007C'} Powered by RBMDev</span>
+            <span>Copyright {'\u00A9'} {new Date().getFullYear()} DCC</span>
+            <span className="footer-credit">Powered by <strong>RBMDev</strong></span>
           </div>
         </div>
       </footer>
