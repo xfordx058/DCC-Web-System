@@ -1078,6 +1078,26 @@ button {
   }
 }
 
+.home-hero.is-image-only {
+  display: block;
+  height: clamp(320px, 56vw, 680px);
+  min-height: 0;
+  padding: 0;
+  background-color: #0a1220;
+}
+
+.home-hero.is-image-only .hero-bg {
+  background: #0a1220;
+}
+
+.home-hero.is-image-only .hero-photo {
+  background-size: contain;
+}
+
+.home-hero.is-image-only::after {
+  display: none;
+}
+
 /* --------------------------------------------------------------------------
    Latest events
    -------------------------------------------------------------------------- */

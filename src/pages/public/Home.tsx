@@ -158,6 +158,10 @@ export default function Home() {
 
   const slideIndex = slides.length ? activeIndex % slides.length : 0;
   const activeSlide: Record<string, any> = slides[slideIndex] ?? heroFallback[0];
+  const slideTitle = String(activeSlide.title ?? '').trim();
+  const slideSubtitle = String(activeSlide.subtitle ?? '').trim();
+  const hasHeroCopy = Boolean(slideTitle || slideSubtitle);
+  const imageOnlySlide = Boolean(activeSlide.image) && !hasHeroCopy;
 
   useEffect(() => {
     if (reducedMotion || paused || slides.length < 2) return;
@@ -211,8 +215,8 @@ export default function Home() {
   return (
     <div className="home">
       <section
-        className="home-hero"
-        aria-label="Welcome to the Diocese of Catarman"
+        className={`home-hero${imageOnlySlide ? ' is-image-only' : ''}`}
+        aria-label={imageOnlySlide ? 'Diocese of Catarman image slide' : 'Welcome to the Diocese of Catarman'}
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
         onFocusCapture={() => setPaused(true)}
@@ -232,14 +236,16 @@ export default function Home() {
           )}
         </div>
 
-        <div className="hero-message">
-          <div key={`${slideIndex}-${activeSlide.id ?? activeSlide.title}`} className="hero-message-inner">
-            <h1>{activeSlide.title}</h1>
-            {activeSlide.subtitle ? <span className="hero-sub">{activeSlide.subtitle}</span> : null}
+        {hasHeroCopy ? (
+          <div className="hero-message">
+            <div key={`${slideIndex}-${activeSlide.id ?? activeSlide.title}`} className="hero-message-inner">
+              {slideTitle ? <h1>{slideTitle}</h1> : null}
+              {slideSubtitle ? <span className="hero-sub">{slideSubtitle}</span> : null}
+            </div>
           </div>
-        </div>
+        ) : null}
 
-        {slideIndex === 0 ? (
+        {slideIndex === 0 && !imageOnlySlide ? (
           <article className="bishop-card hero-fade">
             <div className="bishop-card-image">
               {currentBishop?.image ? (
