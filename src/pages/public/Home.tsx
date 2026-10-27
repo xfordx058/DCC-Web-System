@@ -205,7 +205,10 @@ export default function Home() {
     image: item.image ? String(item.image) : undefined,
   }));
 
-  const churchNames = new Map(churches.map(church => [church.id, String(church.name ?? '')]));
+  const churchDetails = new Map(churches.map(church => [church.id, {
+    name: String(church.name ?? ''),
+    address: String(church.address ?? ''),
+  }]));
   const clergyEntries: FeatureEntry[] = priests
     .filter(item => String(item.status ?? 'active').toLowerCase() !== 'inactive')
     .slice(0, 4)
@@ -213,7 +216,11 @@ export default function Home() {
     id: item.id,
     title: String(item.name ?? 'Priest'),
     meta: item.assignment
-      ? churchNames.get(String(item.assignment)) || (isRecordIdentifier(item.assignment) ? undefined : String(item.assignment))
+      ? (() => {
+          const church = churchDetails.get(String(item.assignment));
+          if (church) return [church.name, church.address].filter(Boolean).join(' · ') || undefined;
+          return isRecordIdentifier(item.assignment) ? undefined : String(item.assignment);
+        })()
       : undefined,
     image: item.photo ? String(item.photo) : undefined,
     }));
