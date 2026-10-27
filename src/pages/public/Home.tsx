@@ -178,7 +178,8 @@ export default function Home() {
     () =>
       events
         .filter(item => isEventActive(item.dateExpired))
-        .sort((left, right) => (eventEndMs(left.dateExpired) || 0) - (eventEndMs(right.dateExpired) || 0)),
+        .sort((left, right) => (eventEndMs(left.dateExpired) || 0) - (eventEndMs(right.dateExpired) || 0))
+        .slice(0, 3),
     [events]
   );
 
