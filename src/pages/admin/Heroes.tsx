@@ -8,25 +8,28 @@ export default function AdminHeroes() {
       title="Homepage Heroes"
       description="Manage homepage hero slides. Titles and subtitles are optional when you want to show an image by itself."
       itemName="Hero slide"
-      initialValues={{ active: true, order: 1 }}
+      initialValues={{ active: true, isDefault: false, order: 1 }}
       imageKey="image"
       storageFolder="heroes"
+      exclusiveBooleanKey="isDefault"
       fields={[
         { key: 'title', label: 'Title', placeholder: 'Optional', section: 'Slide content' },
         { key: 'subtitle', label: 'Subtitle', placeholder: 'Optional' },
         { key: 'caption', label: 'Supporting text', type: 'textarea', section: 'Slide content' },
+        { key: 'isDefault', label: 'Default homepage slide', type: 'checkbox', section: 'Display settings' },
         { key: 'order', label: 'Display order', type: 'number', required: true, section: 'Display settings' },
         { key: 'active', label: 'Active on public website', type: 'checkbox', section: 'Display settings' },
         { key: 'image', label: 'Background image', type: 'file', section: 'Display settings' },
       ]}
       columns={[
         { key: 'image', label: 'Image', render: item => item.image ? <SmartImage className="admin-thumbnail" src={String(item.image)} alt="" /> : '?' },
+        { key: 'isDefault', label: 'Default', render: item => item.isDefault ? <span className="admin-status is-active">Default</span> : '?' },
         { key: 'title', label: 'Title' },
         { key: 'subtitle', label: 'Subtitle' },
         { key: 'order', label: 'Order' },
         { key: 'active', label: 'Status', render: item => <span className={`admin-status ${item.active !== false ? 'is-active' : ''}`}>{item.active !== false ? 'Active' : 'Inactive'}</span> },
       ]}
-      sort={items => [...items].sort((left, right) => Number(left.order ?? 0) - Number(right.order ?? 0))}
+      sort={items => [...items].sort((left, right) => Number(right.isDefault === true) - Number(left.isDefault === true) || Number(left.order ?? 0) - Number(right.order ?? 0))}
     />
   );
 }

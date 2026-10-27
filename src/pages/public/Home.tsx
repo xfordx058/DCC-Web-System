@@ -8,8 +8,8 @@ import { EmptyState, ErrorState } from '@/components/ui/states';
 import { eventEndMs, formatDate, isEventActive, useRealtimeCollection } from '@/lib/firebase-data';
 import { resolveStreamEmbed } from '@/lib/utils';
 
-const heroFallback: Array<{ id: string; title: string; subtitle: string; image?: string }> = [
-  { id: 'welcome', title: 'God is for you', subtitle: 'and so we are.' },
+const heroFallback: Array<{ id: string; title: string; subtitle: string; image?: string; isDefault?: boolean }> = [
+  { id: 'default', title: 'God is for you', subtitle: 'and so we are.', isDefault: true },
 ];
 
 function bishopInitials(name: unknown) {
@@ -153,7 +153,11 @@ export default function Home() {
     const active = heroes
       .filter(item => item.active !== false)
       .sort((left, right) => Number(left.order ?? 0) - Number(right.order ?? 0));
-    return active.length ? active : heroFallback;
+    const defaultSlide = active.find(item => item.isDefault === true);
+    if (defaultSlide) {
+      return [defaultSlide, ...active.filter(item => item.id !== defaultSlide.id)];
+    }
+    return [...heroFallback, ...active];
   }, [heroes]);
 
   const slideIndex = slides.length ? activeIndex % slides.length : 0;
@@ -162,6 +166,7 @@ export default function Home() {
   const slideSubtitle = String(activeSlide.subtitle ?? '').trim();
   const hasHeroCopy = Boolean(slideTitle || slideSubtitle);
   const imageOnlySlide = Boolean(activeSlide.image) && !hasHeroCopy;
+  const showBishop = activeSlide.isDefault === true;
 
   useEffect(() => {
     if (reducedMotion || paused || slides.length < 2) return;
@@ -245,7 +250,7 @@ export default function Home() {
           </div>
         ) : null}
 
-        {slideIndex === 0 && !imageOnlySlide ? (
+        {showBishop ? (
           <article className="bishop-card hero-fade">
             <div className="bishop-card-image">
               {currentBishop?.image ? (

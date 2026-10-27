@@ -889,6 +889,12 @@ button {
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
+  opacity: 0;
+  transition: opacity 700ms ease;
+}
+
+.hero-photo.is-active {
+  opacity: 1;
 }
 
 /* Scrim: darker behind the text (left), lighter to the right so the
