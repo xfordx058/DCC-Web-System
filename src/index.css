@@ -274,9 +274,10 @@ button {
 
 .announcement-message {
   display: flex;
-  flex: 0 0 auto;
+  flex: 0 0 var(--announcement-distance, max-content);
+  width: var(--announcement-distance, max-content);
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   padding-inline: 1.5rem;
   white-space: nowrap;
 }
@@ -308,6 +309,7 @@ button {
 
   .announcement-message {
     flex: 1 1 auto;
+    width: 100%;
     justify-content: center;
     max-width: 100%;
     overflow: hidden;

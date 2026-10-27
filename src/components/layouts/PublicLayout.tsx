@@ -133,14 +133,11 @@ export default function PublicLayout() {
     if (!announcementText || !viewport || !track || !message) return;
 
     const updateTicker = () => {
-      const distance = Math.ceil(message.getBoundingClientRect().width);
-      if (distance <= viewport.clientWidth) {
-        track.classList.remove('is-moving');
-        return;
-      }
+      track.style.removeProperty('--announcement-distance');
+      const distance = Math.ceil(Math.max(message.scrollWidth, viewport.clientWidth));
 
       track.style.setProperty('--announcement-distance', `${distance}px`);
-      track.style.setProperty('--announcement-duration', `${Math.max(12, distance / 38)}s`);
+      track.style.setProperty('--announcement-duration', `${Math.max(14, distance / 42)}s`);
       track.classList.add('is-moving');
     };
 
