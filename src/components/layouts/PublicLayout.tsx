@@ -60,6 +60,9 @@ export default function PublicLayout() {
   const mainRef = useRef<HTMLElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLElement>(null);
+  const announcementViewportRef = useRef<HTMLDivElement>(null);
+  const announcementTrackRef = useRef<HTMLDivElement>(null);
+  const announcementMessageRef = useRef<HTMLSpanElement>(null);
   const initialRender = useRef(true);
 
   useEffect(() => {
@@ -123,13 +126,43 @@ export default function PublicLayout() {
     ? null
     : (featuredAnnouncement?.title || featuredAnnouncement?.content || 'Welcome \u2014 To our newly redesigned website');
 
+  useEffect(() => {
+    const viewport = announcementViewportRef.current;
+    const track = announcementTrackRef.current;
+    const message = announcementMessageRef.current;
+    if (!announcementText || !viewport || !track || !message) return;
+
+    const updateTicker = () => {
+      const distance = Math.ceil(message.getBoundingClientRect().width);
+      if (distance <= viewport.clientWidth) {
+        track.classList.remove('is-moving');
+        return;
+      }
+
+      track.style.setProperty('--announcement-distance', `${distance}px`);
+      track.style.setProperty('--announcement-duration', `${Math.max(12, distance / 38)}s`);
+      track.classList.add('is-moving');
+    };
+
+    updateTicker();
+    const observer = new ResizeObserver(updateTicker);
+    observer.observe(viewport);
+    observer.observe(message);
+    return () => observer.disconnect();
+  }, [announcementText]);
+
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       <a href="#main" className="skip-link">Skip to content</a>
 
       {announcementText ? (
         <div className="announcement-bar" role="region" aria-label="Announcement">
-          <span title={announcementText}>{announcementText}</span>
+          <div className="announcement-ticker" ref={announcementViewportRef}>
+            <div className="announcement-track" ref={announcementTrackRef}>
+              <span ref={announcementMessageRef} className="announcement-message" title={announcementText}>{announcementText}</span>
+              <span className="announcement-message" aria-hidden="true">{announcementText}</span>
+            </div>
+          </div>
           <button
             type="button"
             className="announcement-close"

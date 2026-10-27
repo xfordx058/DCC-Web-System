@@ -255,11 +255,68 @@ button {
   letter-spacing: 0.02em;
 }
 
-.announcement-bar span {
-  max-width: 100%;
+.announcement-ticker {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.announcement-track {
+  display: flex;
+  width: max-content;
+  align-items: center;
+  will-change: transform;
+}
+
+.announcement-track.is-moving {
+  animation: announcement-scroll var(--announcement-duration, 24s) linear infinite;
+}
+
+.announcement-message {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 1.5rem;
   white-space: nowrap;
+}
+
+.announcement-message::after {
+  content: '◆';
+  margin-left: 3rem;
+  color: var(--gold);
+  font-size: 0.55rem;
+}
+
+.announcement-bar:hover .announcement-track,
+.announcement-bar:focus-within .announcement-track {
+  animation-play-state: paused;
+}
+
+@keyframes announcement-scroll {
+  to {
+    transform: translateX(calc(-1 * var(--announcement-distance, 0px)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .announcement-track {
+    animation: none;
+    transform: none;
+    width: 100%;
+  }
+
+  .announcement-message {
+    flex: 1 1 auto;
+    justify-content: center;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .announcement-message[aria-hidden='true'] {
+    display: none;
+  }
 }
 
 .announcement-close {
