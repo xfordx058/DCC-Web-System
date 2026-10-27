@@ -3085,6 +3085,14 @@ button {
   background: var(--bg-secondary);
 }
 
+.public-card-grid.clergy-grid .public-media-card-figure {
+  display: grid;
+  aspect-ratio: 4 / 5;
+  max-height: 460px;
+  place-items: center;
+  background: var(--bg-primary);
+}
+
 .public-media-card-figure img {
   width: 100%;
   height: 100%;
@@ -3094,6 +3102,14 @@ button {
 
 .public-media-card:hover .public-media-card-figure img {
   transform: scale(1.03);
+}
+
+.public-card-grid.clergy-grid .public-media-card:hover .public-media-card-figure img {
+  transform: none;
+}
+
+.public-card-grid.clergy-grid .public-media-card-figure img {
+  object-fit: contain;
 }
 
 .public-media-card-body {

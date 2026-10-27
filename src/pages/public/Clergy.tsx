@@ -6,10 +6,12 @@ import { EmptyState, ErrorState } from '@/components/ui/states';
 import SmartImage from '@/components/ui/SmartImage';
 import type { Priest } from '@/types';
 
+const hiddenClergyIds = new Set(['-P4373TvSwSgToo0Avq7']);
+
 export default function Clergy() {
   const { items: priests, loading, error, refetch } = useRealtimeCollection('priests');
   const clergy = priests
-    .filter(item => item.name && String(item.status ?? 'active').toLowerCase() !== 'inactive')
+    .filter(item => !hiddenClergyIds.has(item.id) && item.name && String(item.status ?? 'active').toLowerCase() !== 'inactive')
     .sort((a, b) => String(a.name).localeCompare(String(b.name))) as Priest[];
 
   return (
@@ -40,7 +42,7 @@ export default function Clergy() {
           }
         />
       ) : (
-        <section className="public-card-grid" aria-label="Clergy">
+        <section className="public-card-grid clergy-grid" aria-label="Clergy">
           {clergy.map(person => (
             <article key={person.id} className="public-media-card">
               {person.photo ? (
