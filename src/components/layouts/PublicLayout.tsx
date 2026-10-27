@@ -5,6 +5,7 @@ import LazyIframe from '@/components/ui/LazyIframe';
 import SmartImage from '@/components/ui/SmartImage';
 import { PublicPageSkeleton } from '@/components/ui/skeleton';
 import { useRealtimeCollection } from '@/lib/firebase-data';
+import { getBirthdayAnnouncement, getManilaMonthDay } from '@/lib/birthdays';
 import { DIOCESE_SEAL_URL } from '@/lib/brand';
 
 const routeNavItems = [
@@ -56,6 +57,9 @@ export default function PublicLayout() {
 
   const location = useLocation();
   const { items: announcements } = useRealtimeCollection('announcements');
+  const { items: priests } = useRealtimeCollection('priests');
+  const { items: bishops } = useRealtimeCollection('bishops');
+  const [todayMonthDay, setTodayMonthDay] = useState(() => getManilaMonthDay());
 
   const mainRef = useRef<HTMLElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -70,6 +74,11 @@ export default function PublicLayout() {
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setTodayMonthDay(getManilaMonthDay()), 60_000);
+    return () => window.clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -126,9 +135,14 @@ export default function PublicLayout() {
     .map(value => String(value ?? '').trim())
     .filter(Boolean)
     .join(' \u2014 ');
+  const birthdayAnnouncementText = useMemo(
+    () => getBirthdayAnnouncement(priests, bishops, todayMonthDay),
+    [bishops, priests, todayMonthDay]
+  );
+  const combinedAnnouncementText = [birthdayAnnouncementText, featuredAnnouncementText].filter(Boolean).join(' \u2022 ');
   const announcementText = announcementDismissed
     ? null
-    : (featuredAnnouncementText || 'Welcome \u2014 To our newly redesigned website');
+    : (combinedAnnouncementText || 'Welcome \u2014 To our newly redesigned website');
 
   useEffect(() => {
     const viewport = announcementViewportRef.current;

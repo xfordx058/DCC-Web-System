@@ -10,6 +10,7 @@ import { SkeletonTable } from '@/components/ui/skeleton';
 import { useToast } from '@/contexts/ToastContext';
 import { recordActivity } from '@/lib/activity-log';
 import { uploadImage } from '@/lib/uploads';
+import { BIRTHDAY_PATTERN } from '@/lib/birthdays';
 import type { Priest } from '@/types';
 import SmartImage from '@/components/ui/SmartImage';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -354,6 +355,17 @@ export default function AdminPriests() {
           <div className="admin-form-section-heading"><h3>Priest information</h3><span /></div>
           <AdminField label="Name" required>
             <input required value={form.name || ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+          </AdminField>
+          <AdminField label="Birthday (MM-DD)">
+            <input
+              inputMode="numeric"
+              pattern={BIRTHDAY_PATTERN}
+              title="Enter the month and day as MM-DD."
+              placeholder="MM-DD"
+              value={form.birthday || ''}
+              onChange={e => setForm(f => ({ ...f, birthday: e.target.value }))}
+            />
+            <small className="admin-hint">Only the month and day are saved for recurring birthday notices.</small>
           </AdminField>
           <AdminField label="Ordination Year">
             <input inputMode="numeric" value={String(form.ordinationYear || '')} onChange={e => setForm(f => ({ ...f, ordinationYear: e.target.value }))} />

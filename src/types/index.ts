@@ -17,6 +17,7 @@ export interface Church {
 export interface Priest {
   id?: string;
   name?: string;
+  birthday?: string;
   firstName?: string;
   lastName?: string;
   ordinationYear?: string | number;
@@ -29,6 +30,7 @@ export interface Priest {
 export interface Bishop {
   id?: string;
   name?: string;
+  birthday?: string;
   yearInstalled?: string | number;
   image?: string;
   isCurrent?: boolean;

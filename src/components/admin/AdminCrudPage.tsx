@@ -27,6 +27,10 @@ type Field = {
   label: string;
   type?: 'text' | 'textarea' | 'date' | 'number' | 'checkbox' | 'select' | 'file';
   required?: boolean;
+  pattern?: string;
+  title?: string;
+  inputMode?: 'none' | 'text' | 'tel' | 'url' | 'email' | 'numeric' | 'decimal' | 'search';
+  hint?: string;
   options?: Option[];
   placeholder?: string;
   section?: string;
@@ -446,8 +450,12 @@ export default function AdminCrudPage({
                   required={field.required}
                   value={field.type === 'date' ? String(value ?? '').slice(0, 10) : value ?? ''}
                   placeholder={field.placeholder}
+                  pattern={field.pattern}
+                  title={field.title}
+                  inputMode={field.inputMode}
                   onChange={event => setForm(current => ({ ...current, [field.key]: event.target.value }))}
                 />
+                {field.hint ? <small className="admin-hint">{field.hint}</small> : null}
                 </AdminField>
               );
             }
