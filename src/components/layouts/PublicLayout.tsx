@@ -229,6 +229,14 @@ export default function PublicLayout() {
               <span><strong>Diocese of Catarman</strong><small>Northern Samar, Philippines</small></span>
             </Link>
             <p className="footer-intro">Stay connected with the life and work of the Diocese.</p>
+            <nav className="footer-social" aria-label="Follow the Diocese">
+              <a href="https://www.facebook.com/dioceseofcatarman" target="_blank" rel="noopener noreferrer" aria-label="Diocese of Catarman on Facebook" title="Facebook">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M13.5 21v-8.2h2.8l.4-3.2h-3.2V7.5c0-.9.3-1.6 1.6-1.6H17V3.1c-.3 0-1.4-.1-2.7-.1-2.7 0-4.5 1.6-4.5 4.6v2.1H7v3.2h2.8V21h3.7z" /></svg>
+              </a>
+              <a href="https://www.youtube.com/@DioceseofCatarman" target="_blank" rel="noopener noreferrer" aria-label="Diocese of Catarman on YouTube" title="YouTube">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4l6.2 3.6-6.2 3.6Z" /></svg>
+              </a>
+            </nav>
           </div>
 
           <div className="footer-col">
