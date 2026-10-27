@@ -1202,12 +1202,10 @@ button {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: grayscale(1);
-  transition: filter 500ms ease, transform 600ms ease;
+  transition: transform 600ms ease;
 }
 
 .event-card:hover .event-image img {
-  filter: grayscale(0);
   transform: scale(1.03);
 }
 
@@ -1311,9 +1309,8 @@ button {
   border: 4px solid #ffffff;
   background: var(--soft);
   object-fit: cover;
-  filter: grayscale(1);
   box-shadow: 0 6px 18px rgba(17, 27, 46, 0.10);
-  transition: filter 500ms ease, z-index 0ms;
+  transition: z-index 0ms;
 }
 
 .collage-item:nth-child(1) {
@@ -1345,7 +1342,6 @@ button {
 }
 
 .collage-item:hover {
-  filter: grayscale(0);
   z-index: 6;
 }
 
@@ -1379,12 +1375,6 @@ button {
   border: 1px solid var(--line);
   background: var(--soft);
   object-fit: cover;
-  filter: grayscale(1);
-  transition: filter 500ms ease;
-}
-
-.feature-item:hover .feature-thumb {
-  filter: grayscale(0);
 }
 
 .feature-thumb-placeholder {
@@ -1571,12 +1561,6 @@ button {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: grayscale(1);
-  transition: filter 500ms ease;
-}
-
-.year-image:hover img {
-  filter: grayscale(0);
 }
 
 .year-body {
@@ -2725,12 +2709,6 @@ button {
   height: 100%;
   min-height: 180px;
   object-fit: cover;
-  filter: grayscale(1);
-  transition: filter 500ms ease;
-}
-
-.public-event-card:hover > img {
-  filter: grayscale(0);
 }
 
 .public-stream-card {
@@ -2784,12 +2762,6 @@ button {
   height: 100%;
   min-height: 360px;
   object-fit: cover;
-  filter: grayscale(1);
-  transition: filter 500ms ease;
-}
-
-.public-theme-card:hover img {
-  filter: grayscale(0);
 }
 
 .public-theme-card > div {
@@ -3117,12 +3089,10 @@ button {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: grayscale(1);
-  transition: filter 500ms ease, transform 600ms ease;
+  transition: transform 600ms ease;
 }
 
 .public-media-card:hover .public-media-card-figure img {
-  filter: grayscale(0);
   transform: scale(1.03);
 }
 
