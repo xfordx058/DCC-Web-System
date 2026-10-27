@@ -122,9 +122,13 @@ export default function PublicLayout() {
     .filter(item => item.active !== false && String(item.status ?? 'active').toLowerCase() !== 'inactive')
     .sort((a, b) => (Date.parse(String(b.publishedDate ?? b.createdAt ?? '')) || 0) - (Date.parse(String(a.publishedDate ?? a.createdAt ?? '')) || 0))[0], [announcements]);
 
+  const featuredAnnouncementText = [featuredAnnouncement?.title, featuredAnnouncement?.content]
+    .map(value => String(value ?? '').trim())
+    .filter(Boolean)
+    .join(' \u2014 ');
   const announcementText = announcementDismissed
     ? null
-    : (featuredAnnouncement?.title || featuredAnnouncement?.content || 'Welcome \u2014 To our newly redesigned website');
+    : (featuredAnnouncementText || 'Welcome \u2014 To our newly redesigned website');
 
   useEffect(() => {
     const viewport = announcementViewportRef.current;
