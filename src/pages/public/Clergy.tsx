@@ -6,7 +6,7 @@ import { EmptyState, ErrorState } from '@/components/ui/states';
 import SmartImage from '@/components/ui/SmartImage';
 import type { Priest } from '@/types';
 
-const hiddenClergyIds = new Set(['-P4373TvSwSgToo0Avq7']);
+const hiddenClergyIds = new Set(['-P4373TvSwSgToo0Avq7', '-P4378W27jtuOVLIN2ho']);
 
 export default function Clergy() {
   const { items: priests, loading, error, refetch } = useRealtimeCollection('priests');
