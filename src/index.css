@@ -4557,6 +4557,35 @@ button {
   box-shadow: var(--focus-ring);
 }
 
+.admin-search-field {
+  position: relative;
+  display: flex;
+  flex: 1 1 240px;
+  align-items: center;
+  min-width: 0;
+}
+
+.admin-search-field > svg {
+  position: absolute;
+  top: 50%;
+  left: 0.9rem;
+  z-index: 1;
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.admin-toolbar .admin-search-field input {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  flex: 1 1 auto;
+  padding: 0.55rem 0.75rem 0.55rem 2.65rem;
+}
+
 .admin-toolbar span {
   color: var(--text-secondary);
   font-size: 0.72rem;
@@ -6300,6 +6329,11 @@ button {
   .admin-toolbar {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .admin-search-field {
+    width: 100%;
+    flex: 0 0 auto;
   }
 
   .admin-form-grid,
