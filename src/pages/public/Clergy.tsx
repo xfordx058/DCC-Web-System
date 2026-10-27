@@ -1,15 +1,19 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { UsersRound } from 'lucide-react';
 import { useRealtimeCollection } from '@/lib/firebase-data';
 import { SkeletonGrid } from '@/components/ui/skeleton';
 import { EmptyState, ErrorState } from '@/components/ui/states';
 import SmartImage from '@/components/ui/SmartImage';
+import { isRecordIdentifier } from '@/lib/utils';
 import type { Priest } from '@/types';
 
 const hiddenClergyIds = new Set(['-P4373TvSwSgToo0Avq7', '-P4378W27jtuOVLIN2ho']);
 
 export default function Clergy() {
   const { items: priests, loading, error, refetch } = useRealtimeCollection('priests');
+  const { items: churches } = useRealtimeCollection('churches');
+  const churchNames = useMemo(() => new Map(churches.map(church => [church.id, String(church.name ?? '')])), [churches]);
   const clergy = priests
     .filter(item => !hiddenClergyIds.has(item.id) && item.name && String(item.status ?? 'active').toLowerCase() !== 'inactive')
     .sort((a, b) => String(a.name).localeCompare(String(b.name))) as Priest[];
@@ -51,7 +55,7 @@ export default function Clergy() {
                 </div>
               ) : null}
               <div className="public-media-card-body">
-                <p className="admin-eyebrow">{person.assignment || 'Priest'}</p>
+                <p className="admin-eyebrow">{churchNames.get(String(person.assignment ?? '')) || (isRecordIdentifier(person.assignment) ? 'Priest' : person.assignment || 'Priest')}</p>
                 <h2>{person.name}</h2>
                 {person.ordinationYear ? <p>Ordained {person.ordinationYear}</p> : null}
                 {person.biography ? <p>{person.biography}</p> : null}

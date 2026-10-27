@@ -13,7 +13,7 @@ type Props = {
 };
 
 function priestName(priest?: Priest) {
-  return priest?.name || `${priest?.firstName || ''} ${priest?.lastName || ''}`.trim() || priest?.id || 'Unknown priest';
+  return priest?.name || `${priest?.firstName || ''} ${priest?.lastName || ''}`.trim() || 'Unnamed priest';
 }
 
 export function PriestMultiSelect({ priests, value, onChange, loading = false, error = false, onRetry, describedBy }: Props) {
@@ -109,7 +109,7 @@ export function PriestMultiSelect({ priests, value, onChange, loading = false, e
         <ul className="priest-selected-chips" aria-label="Selected assistant priests">
           {value.map(id => {
             const priest = priests.find(item => item.id === id);
-            const label = priest ? priestName(priest) : id;
+            const label = priest ? priestName(priest) : 'Priest profile unavailable';
             return (
               <li key={id}>
                 <span>{label}</span>

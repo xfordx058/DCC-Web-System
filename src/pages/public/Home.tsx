@@ -6,7 +6,7 @@ import SmartImage from '@/components/ui/SmartImage';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState, ErrorState } from '@/components/ui/states';
 import { eventEndMs, formatDate, isEventActive, useRealtimeCollection } from '@/lib/firebase-data';
-import { resolveStreamEmbed } from '@/lib/utils';
+import { isRecordIdentifier, resolveStreamEmbed } from '@/lib/utils';
 
 const heroFallback: Array<{ id: string; title: string; subtitle: string; image?: string; isDefault?: boolean }> = [
   { id: 'default', title: 'God is for you', subtitle: 'and so we are.', isDefault: true },
@@ -205,13 +205,16 @@ export default function Home() {
     image: item.image ? String(item.image) : undefined,
   }));
 
+  const churchNames = new Map(churches.map(church => [church.id, String(church.name ?? '')]));
   const clergyEntries: FeatureEntry[] = priests
     .filter(item => String(item.status ?? 'active').toLowerCase() !== 'inactive')
     .slice(0, 4)
     .map(item => ({
     id: item.id,
     title: String(item.name ?? 'Priest'),
-    meta: item.assignment ? String(item.assignment) : undefined,
+    meta: item.assignment
+      ? churchNames.get(String(item.assignment)) || (isRecordIdentifier(item.assignment) ? undefined : String(item.assignment))
+      : undefined,
     image: item.photo ? String(item.photo) : undefined,
     }));
 

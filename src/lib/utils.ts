@@ -6,6 +6,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function isRecordIdentifier(value: unknown): boolean {
+  const candidate = String(value ?? '').trim();
+  return /^-[A-Za-z0-9_-]{19}$/.test(candidate) || /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(candidate);
+}
+
 export function getYouTubeId(value: unknown): string {
   const raw = String(value ?? '').trim();
   if (!raw) return '';
