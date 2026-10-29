@@ -1,8 +1,6 @@
-﻿import { useEffect, useRef, useState } from 'react';
-import { CloudSun, LogOut, Moon, Save, Sun } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { CloudSun, Moon, Sun } from 'lucide-react';
 import { AdminHeader } from '@/components/admin/AdminPrimitives';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { db, ref, set } from '@/db/firebase';
 import { recordActivity } from '@/lib/activity-log';
@@ -17,7 +15,7 @@ const defaultSettings: Settings = { theme: 'light', weatherEnabled: true };
 function normalize(value: unknown): Settings {
   const record = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
   return {
-    theme: record.theme === 'dark' ? 'dark' : 'light',
+    theme: record.theme === 'dark' ? 'dark' : record.theme === 'light' ? 'light' : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
     weatherEnabled: record.weatherEnabled === undefined ? true : Boolean(record.weatherEnabled),
   };
 }
@@ -51,72 +49,57 @@ function Toggle({
 }
 
 export default function AdminSettings() {
-  const { logout } = useAuth();
   const { toast } = useToast();
   const { value: remote, loading, error, refetch } = useRealtimeValue<unknown>('settings', null);
   const [settings, setSettings] = useState<Settings>(defaultSettings);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const hydrated = useRef(false);
-  const savedTimer = useRef<number | null>(null);
+  const [savingSetting, setSavingSetting] = useState<keyof Settings | null>(null);
 
   useEffect(() => {
     if (loading) return;
-    const next = normalize(remote);
-    document.documentElement.classList.toggle('dark', next.theme === 'dark');
-    if (!hydrated.current) {
-      hydrated.current = true;
-      setSettings(next);
-    }
-    // Keep the local form in sync if another administrator saves changes.
-    if (hydrated.current && !saving) setSettings(next);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setSettings(normalize(remote));
   }, [loading, remote]);
 
-  useEffect(
-    () => () => {
-      if (savedTimer.current !== null) window.clearTimeout(savedTimer.current);
-    },
-    []
-  );
-
-  async function save() {
-    if (saving) return;
-    setSaving(true);
+  async function updateSetting<K extends keyof Settings>(key: K, value: Settings[K]) {
+    if (savingSetting || loading || error) return;
+    const previousValue = settings[key];
+    setSettings(current => ({ ...current, [key]: value }));
+    if (key === 'theme') document.documentElement.classList.toggle('dark', value === 'dark');
+    setSavingSetting(key);
     try {
-      await set(ref(db, 'settings'), settings);
-      document.documentElement.classList.toggle('dark', settings.theme === 'dark');
-      setSaved(true);
-      if (savedTimer.current !== null) window.clearTimeout(savedTimer.current);
-      savedTimer.current = window.setTimeout(() => setSaved(false), 1800);
-      toast('success', 'Settings saved.');
+      await set(ref(db, `settings/${key}`), value);
+      const message = key === 'theme'
+        ? `${value === 'dark' ? 'Dark' : 'Light'} mode applied.`
+        : `Dashboard weather widget ${value ? 'enabled' : 'disabled'}.`;
+      toast('success', message);
       void recordActivity({
         source: 'Settings',
-        action: 'Updated site settings',
-        details: `Dark mode ${settings.theme === 'dark' ? 'on' : 'off'} · Weather widget ${settings.weatherEnabled ? 'on' : 'off'}`,
+        action: key === 'theme' ? 'Updated appearance setting' : 'Updated dashboard weather setting',
+        details: key === 'theme' ? `${value} mode applied` : `Weather widget ${value ? 'enabled' : 'disabled'}`,
       });
     } catch (err) {
       console.error(err);
-      toast('error', 'Unable to save settings. Please try again.');
+      setSettings(current => ({ ...current, [key]: previousValue }));
+      if (key === 'theme') document.documentElement.classList.toggle('dark', previousValue === 'dark');
+      toast('error', `Unable to apply ${key === 'theme' ? 'appearance' : 'dashboard weather'} setting. Please try again.`);
     } finally {
-      setSaving(false);
+      setSavingSetting(null);
     }
   }
 
   return (
     <div className="admin-page">
-      <AdminHeader title="Settings" description="Control appearance, dashboard weather visibility, and the current admin session." />
-      <section className="admin-settings-card" aria-busy={loading || saving}>
+      <AdminHeader title="Settings" description="Change the admin appearance and dashboard preferences. Updates apply and save automatically." />
+      <section className="admin-settings-card" aria-busy={loading || Boolean(savingSetting)}>
         {error ? (
           <ErrorState
             compact
             title="Unable to load settings"
-            description="The saved settings could not be reached. You can retry or save new values."
+            description="The saved settings could not be reached. Check your connection and try again."
             onRetry={() => void refetch()}
           />
         ) : loading ? (
           <div className="settings-skeleton" role="status" aria-label="Loading settings">
-            {Array.from({ length: 2 }).map((_, index) => (
+            {Array.from({ length: 1 }).map((_, index) => (
               <div className="setting-row" key={index}>
                 <div className="setting-main">
                   <Skeleton className="h-9 w-9 rounded-full" />
@@ -133,18 +116,17 @@ export default function AdminSettings() {
           <>
             <div className="setting-row">
               <div className="setting-main">
-                <span className="setting-icon" aria-hidden="true">
-                  {settings.theme === 'dark' ? <Moon size={18} strokeWidth={1.8} /> : <Sun size={18} strokeWidth={1.8} />}
-                </span>
+                <span className="setting-icon" aria-hidden="true">{settings.theme === 'dark' ? <Moon size={18} strokeWidth={1.8} /> : <Sun size={18} strokeWidth={1.8} />}</span>
                 <div>
-                  <strong>Dark mode</strong>
-                  <p>Use a darker neutral palette across the administration interface.</p>
+                  <strong>Appearance</strong>
+                  <p>Switch between the light and dark admin appearance. Your choice is saved automatically.</p>
                 </div>
               </div>
               <Toggle
                 label="Dark mode"
                 checked={settings.theme === 'dark'}
-                onChange={value => setSettings(current => ({ ...current, theme: value ? 'dark' : 'light' }))}
+                disabled={Boolean(savingSetting) || loading || error}
+                onChange={value => void updateSetting('theme', value ? 'dark' : 'light')}
               />
             </div>
             <div className="setting-row">
@@ -160,20 +142,21 @@ export default function AdminSettings() {
               <Toggle
                 label="Dashboard weather widget"
                 checked={settings.weatherEnabled}
-                onChange={value => setSettings(current => ({ ...current, weatherEnabled: value }))}
+                disabled={Boolean(savingSetting) || loading || error}
+                onChange={value => void updateSetting('weatherEnabled', value)}
               />
             </div>
           </>
         )}
         <div className="admin-form-actions admin-settings-actions">
-          <Button onClick={() => void save()} disabled={saving || loading} className="gap-2" aria-busy={saving}>
-            {saving ? <Spinner label="Saving settings" /> : <Save size={16} aria-hidden />}
-            {saving ? 'Saving…' : saved ? 'Saved' : 'Save settings'}
-          </Button>
-          <Button variant="secondary" onClick={() => void logout()} className="gap-2">
-            <LogOut size={16} aria-hidden />
-            Log out
-          </Button>
+          <span className="settings-auto-feedback" role="status" aria-live="polite">
+            {savingSetting ? <Spinner label="Applying setting" /> : null}
+            {savingSetting === 'theme'
+              ? `Applying ${settings.theme === 'dark' ? 'dark' : 'light'} mode…`
+              : savingSetting === 'weatherEnabled'
+                ? 'Updating dashboard weather…'
+                : 'Changes apply and save automatically.'}
+          </span>
         </div>
       </section>
     </div>

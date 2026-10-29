@@ -19,6 +19,7 @@ import { EmptyState, ErrorState, Spinner } from '@/components/ui/states';
 import { validateImageFile } from '@/lib/uploads';
 import type { DonationMethod, DonationMethodType } from '@/types';
 import SmartImage from '@/components/ui/SmartImage';
+import { AdminViewToggle, useAdminViewPreference } from './AdminViewToggle';
 
 type FormState = {
   type: string;
@@ -65,6 +66,7 @@ function typeIcon(method: DonationMethod) {
 }
 
 export default function DonationMethodsPanel() {
+  const { mode: viewMode, updateMode: setViewMode } = useAdminViewPreference('payment-methods');
   const { items, loading, error, refetch } = useRealtimeCollection('donationOptions');
   const { toast } = useToast();
   const { confirm, confirmDialog } = useConfirm();
@@ -323,13 +325,14 @@ export default function DonationMethodsPanel() {
           />
         </div>
         <span aria-live="polite">{loading ? 'Loading…' : `${visibleMethods.length} methods`}</span>
+        <AdminViewToggle mode={viewMode} onChange={setViewMode} />
         <Button type="button" onClick={openAdd} className="gap-2">
           <Plus size={16} aria-hidden />
           Add payment method
         </Button>
       </div>
 
-      <div className="admin-table-wrap">
+      <div className={`admin-table-wrap${viewMode === 'grid' ? ' is-grid-view' : ''}`}>
         {loading ? (
           <SkeletonTable columns={5} />
         ) : error ? (
@@ -359,6 +362,40 @@ export default function DonationMethodsPanel() {
               )
             }
           />
+        ) : viewMode === 'grid' ? (
+          <div className="admin-record-grid">
+            {visibleMethods.map(method => {
+              const busy = Boolean(pendingIds[method.id]);
+              return (
+                <article className="admin-record-card payment-method-record-card" key={method.id}>
+                  {method.qrImage ? <SmartImage className="admin-payment-qr" src={method.qrImage} alt={`${method.name} QR code`} fallbackLabel="QR code unavailable" /> : null}
+                  <header className="admin-record-card-head">
+                    <div className="admin-table-media">
+                      <span className="admin-method-icon" aria-hidden>{typeIcon(method)}</span>
+                      <div className="admin-method-name">
+                        <strong>{method.name}</strong>
+                        <span className="admin-status">{donationTypeLabel(method.type)}</span>
+                      </div>
+                    </div>
+                    <span className={`admin-status${method.enabled ? ' is-active' : ''}`}>{method.enabled ? 'Active' : 'Hidden'}</span>
+                  </header>
+                  <dl className="admin-record-card-details">
+                    <div><dt>Account name</dt><dd>{method.accountName || '—'}</dd></div>
+                    <div><dt>Account number</dt><dd>{method.accountNumber || 'No account number provided'}</dd></div>
+                    {method.description ? <div><dt>Description</dt><dd>{method.description}</dd></div> : null}
+                  </dl>
+                  <div className="admin-record-card-actions">
+                    <button type="button" onClick={() => openEdit(method)} aria-label={`Edit ${method.name}`}><Pencil size={14} aria-hidden /> Edit</button>
+                    <button type="button" onClick={() => void toggleEnabled(method)} disabled={busy} aria-label={`${method.enabled ? 'Hide' : 'Publish'} ${method.name}`}>
+                      {method.enabled ? <EyeOff size={14} aria-hidden /> : <Eye size={14} aria-hidden />}
+                      {method.enabled ? 'Hide' : 'Publish'}
+                    </button>
+                    <button type="button" className="is-danger" onClick={() => void handleDelete(method)} disabled={busy} aria-label={`Delete ${method.name}`}><Trash2 size={14} aria-hidden /> Delete</button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
         ) : (
           <table className="admin-table" aria-label="Payment methods">
             <thead>

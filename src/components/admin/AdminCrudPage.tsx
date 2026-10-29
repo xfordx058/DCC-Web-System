@@ -14,6 +14,7 @@ import { SkeletonTable } from '@/components/ui/skeleton';
 import { EmptyState, ErrorState, Spinner } from '@/components/ui/states';
 import { uploadImage } from '@/lib/uploads';
 import SmartImage from '@/components/ui/SmartImage';
+import { AdminViewToggle, useAdminViewPreference } from './AdminViewToggle';
 
 type Option = { label: string; value: string };
 
@@ -92,6 +93,7 @@ export default function AdminCrudPage({
   const [saving, setSaving] = useState(false);
   const [uploadPercent, setUploadPercent] = useState(0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { mode: viewMode, updateMode: setViewMode } = useAdminViewPreference(path);
 
   const searchIndex = useMemo(
     () => items.map(item => ({ item, haystack: JSON.stringify(item).toLowerCase() })),
@@ -271,6 +273,7 @@ export default function AdminCrudPage({
           />
         </div>
         <span aria-live="polite">{visibleCountLabel(loading, filtered.length, items.length, isFiltering)}</span>
+        <AdminViewToggle mode={viewMode} onChange={setViewMode} />
         {hideHeader ? (
           <Button onClick={openAdd} className="gap-2">
             <Plus size={16} aria-hidden />
@@ -279,7 +282,7 @@ export default function AdminCrudPage({
         ) : null}
       </div>
 
-      <div className="admin-table-wrap">
+      <div className={`admin-table-wrap${viewMode === 'grid' ? ' is-grid-view' : ''}`}>
         {loading ? (
           <SkeletonTable columns={columns.length + 1} />
         ) : error ? (
@@ -311,6 +314,35 @@ export default function AdminCrudPage({
               )
             }
           />
+        ) : viewMode === 'grid' ? (
+          <div className="admin-record-grid">
+            {pageItems.map(item => {
+              const label = recordLabel(item) || `this ${itemName.toLowerCase()}`;
+              return (
+                <article className="admin-record-card" key={item.id}>
+                  <header className="admin-record-card-head">
+                    <h3>{recordLabel(item) || itemName}</h3>
+                    <div className="admin-actions">
+                      <button type="button" onClick={() => openEdit(item)} aria-label={`Edit ${label}`} title={`Edit ${label}`}>
+                        <Pencil size={14} aria-hidden /><span className="admin-action-text">Edit</span>
+                      </button>
+                      <button type="button" onClick={() => void handleDelete(item)} disabled={deletingId === item.id} aria-label={`Delete ${label}`} title={`Delete ${label}`} className="is-danger">
+                        <Trash2 size={14} aria-hidden /><span className="admin-action-text">{deletingId === item.id ? 'Deleting…' : 'Delete'}</span>
+                      </button>
+                    </div>
+                  </header>
+                  <dl className="admin-record-card-details">
+                    {columns.map(column => (
+                      <div key={column.key}>
+                        <dt>{column.label}</dt>
+                        <dd>{column.render ? column.render(item) : String(item[column.key] ?? '—')}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </article>
+              );
+            })}
+          </div>
         ) : (
           <table className="admin-table" aria-label={`${title} records`}>
             <thead>

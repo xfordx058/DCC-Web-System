@@ -14,6 +14,7 @@ import { BIRTHDAY_PATTERN } from '@/lib/birthdays';
 import type { Priest } from '@/types';
 import SmartImage from '@/components/ui/SmartImage';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { AdminViewToggle, useAdminViewPreference } from '@/components/admin/AdminViewToggle';
 
 const PAGE_SIZE = 10;
 
@@ -24,6 +25,7 @@ export default function AdminPriests() {
   const { items: churchItems } = useRealtimeCollection('churches');
   const { toast } = useToast();
   const { confirm, confirmDialog } = useConfirm();
+  const { mode: viewMode, updateMode: setViewMode } = useAdminViewPreference('priests');
 
   const [queryText, setQueryText] = useState('');
   const deferredQuery = useDeferredValue(queryText);
@@ -238,9 +240,10 @@ export default function AdminPriests() {
           {parishes.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
         <span aria-live="polite">{loading ? 'Loading…' : `${filtered.length} priests`}</span>
+        <AdminViewToggle mode={viewMode} onChange={setViewMode} />
       </div>
 
-      <div className="admin-table-wrap">
+      <div className={`admin-table-wrap${viewMode === 'grid' ? ' is-grid-view' : ''}`}>
         {loading ? (
           <SkeletonTable columns={5} />
         ) : error ? (
@@ -274,6 +277,28 @@ export default function AdminPriests() {
               )
             }
           />
+        ) : viewMode === 'grid' ? (
+          <div className="admin-record-grid">
+            {pageItems.map(priest => (
+              <article className="admin-record-card priest-record-card" key={priest.id}>
+                <div className="admin-record-priest-photo">
+                  {priest.photo ? <SmartImage className="admin-record-card-avatar" src={priest.photo} alt={`${priest.name || 'Priest'} portrait`} /> : <span>{(priest.name || 'P').slice(0, 1).toUpperCase()}</span>}
+                </div>
+                <header className="admin-record-card-head">
+                  <h3>{priest.name || 'Unnamed priest'}</h3>
+                  <span className={`admin-status ${priest.status === 'inactive' ? '' : 'is-active'}`}>{priest.status === 'inactive' ? 'Inactive' : 'Active'}</span>
+                </header>
+                <dl className="admin-record-card-details">
+                  <div><dt>Ordained</dt><dd>{priest.ordinationYear || '—'}</dd></div>
+                  <div><dt>Assignment</dt><dd>{assignmentName(priest.assignment)}</dd></div>
+                </dl>
+                <div className="admin-record-card-actions">
+                  <button type="button" onClick={() => openEdit(priest)} aria-label={`Edit ${priest.name || 'priest'}`}><Pencil size={14} aria-hidden /> Edit</button>
+                  <button type="button" className="is-danger" onClick={() => void handleDelete(priest.id)} disabled={busyId === priest.id} aria-label={`Delete ${priest.name || 'priest'}`}><Trash2 size={14} aria-hidden /> {busyId === priest.id ? 'Deleting…' : 'Delete'}</button>
+                </div>
+              </article>
+            ))}
+          </div>
         ) : (
           <table className="admin-table" aria-label="Priests">
             <thead>

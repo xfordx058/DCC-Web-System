@@ -1,13 +1,14 @@
 ﻿import { Suspense, useEffect, useState, type FormEvent } from 'react';
 import { NavLink, Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRealtimeValue } from '@/lib/firebase-data';
 import { DIOCESE_SEAL_URL, DIOCESE_NAME } from '@/lib/brand';
 import { AdminPageSkeleton } from '@/components/ui/skeleton';
 import Tooltip from '@/components/ui/Tooltip';
 import SmartImage from '@/components/ui/SmartImage';
 import {
   Activity, Bell, CalendarDays, ChevronsLeft, ChevronsRight, Church, CloudSun, ExternalLink,
-  FileText, Gauge, HandHeart, Image, Megaphone, Menu, Settings, ShieldCheck, UserRound,
+  FileText, Gauge, HandHeart, Image, LogOut, Megaphone, Menu, Settings, ShieldCheck, UserRound,
   UsersRound, Wrench, Radio, Search,
 } from 'lucide-react';
 
@@ -52,7 +53,8 @@ const navGroups: { label: string; items: { to: string; label: string; icon: type
 const COLLAPSE_KEY = 'dcc-admin-sidebar-collapsed';
 
 export default function AdminLayout() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const appearance = useRealtimeValue<unknown>('settings/theme', null);
   const location = useLocation();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(() => {
@@ -61,6 +63,22 @@ export default function AdminLayout() {
   });
   const [mobileOpen, setMobileOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState(() => new URLSearchParams(location.search).get('search') ?? '');
+
+  useEffect(() => {
+    if (appearance.loading) return;
+
+    const systemPreference = window.matchMedia('(prefers-color-scheme: dark)');
+    const hasSavedPreference = appearance.value === 'dark' || appearance.value === 'light';
+    const applyAppearance = () => {
+      const dark = hasSavedPreference ? appearance.value === 'dark' : systemPreference.matches;
+      document.documentElement.classList.toggle('dark', dark);
+    };
+
+    applyAppearance();
+    if (hasSavedPreference) return;
+    systemPreference.addEventListener('change', applyAppearance);
+    return () => systemPreference.removeEventListener('change', applyAppearance);
+  }, [appearance.loading, appearance.value]);
 
   useEffect(() => {
     window.localStorage.setItem(COLLAPSE_KEY, String(collapsed));
@@ -143,6 +161,19 @@ export default function AdminLayout() {
             <small>{user?.email}</small>
           </div>
         </div>
+        <button
+          type="button"
+          className="admin-sidebar-logout"
+          title="Log out"
+          aria-label="Log out"
+          onClick={() => {
+            setMobileOpen(false);
+            void logout();
+          }}
+        >
+          <LogOut size={17} strokeWidth={2} aria-hidden />
+          <span>Log out</span>
+        </button>
       </aside>
 
       {mobileOpen ? (

@@ -127,8 +127,18 @@
   --surface-soft: #14304E;
   --text-primary: #E8EEF7;
   --text-secondary: #93A5C0;
+  --text-muted: #B4C2D4;
   --border: #1F3A5F;
   --border-strong: #2A4A73;
+  --sidebar-bg: #0B1A2C;
+  --sidebar-hover: #152B43;
+  --sidebar-active: rgba(111, 168, 220, 0.16);
+  --success: #62D99A;
+  --success-soft: rgba(54, 166, 105, 0.16);
+  --danger: #FF8F86;
+  --danger-soft: rgba(220, 75, 65, 0.16);
+  --warning: #F2C66D;
+  --warning-soft: rgba(211, 157, 45, 0.16);
   --signal: #6FA8DC;
   --signal-strong: #8DB8E4;
   --signal-soft: rgba(111, 168, 220, 0.14);
@@ -3491,6 +3501,35 @@ button {
   white-space: nowrap;
 }
 
+.admin-sidebar-logout {
+  display: flex;
+  width: 100%;
+  min-height: 40px;
+  align-items: center;
+  gap: 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  padding: 0.55rem 0.75rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.76rem;
+  text-align: left;
+  transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+
+.admin-sidebar-logout:hover {
+  border-color: rgba(190, 65, 65, 0.35);
+  background: rgba(190, 65, 65, 0.08);
+  color: var(--danger);
+}
+
+.admin-sidebar-logout:focus-visible {
+  outline: 2px solid var(--diocese-blue);
+  outline-offset: 2px;
+}
+
 /* --- Workspace ----------------------------------------------------------- */
 .admin-workspace {
   min-height: 100vh;
@@ -6511,7 +6550,8 @@ button {
   .admin-shell.is-collapsed .admin-brand-text,
   .admin-shell.is-collapsed .admin-nav-label,
   .admin-shell.is-collapsed .admin-nav a span,
-  .admin-shell.is-collapsed .admin-sidebar-user div {
+  .admin-shell.is-collapsed .admin-sidebar-user div,
+  .admin-shell.is-collapsed .admin-sidebar-logout span {
     display: none;
   }
 
@@ -6532,6 +6572,12 @@ button {
   }
 
   .admin-shell.is-collapsed .admin-sidebar-user {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .admin-shell.is-collapsed .admin-sidebar-logout {
     justify-content: center;
     padding-left: 0;
     padding-right: 0;
@@ -7066,12 +7112,50 @@ button {
 
 .admin-settings-card {
   max-width: 780px;
+  overflow: hidden;
+  padding: 0;
+  border-radius: 14px;
+}
+
+.admin-settings-card > .setting-row {
+  padding: 1.2rem 1.4rem;
+  transition: background 160ms ease;
+}
+
+.admin-settings-card > .setting-row:hover {
+  background: var(--bg-secondary);
+}
+
+.admin-settings-card > .admin-form-actions {
+  padding: 0.85rem 1.4rem;
+  margin: 0;
+  background: var(--bg-secondary);
 }
 
 .admin-settings-actions {
   border-top: 1px solid var(--border);
   padding-top: 1.1rem;
   margin-top: 0.35rem;
+}
+
+.settings-auto-badge {
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-secondary);
+  padding: 0.4rem 0.7rem;
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  font-weight: 650;
+}
+
+.settings-auto-feedback {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
 }
 
 .admin-form-message.is-success {
@@ -8717,5 +8801,389 @@ button {
 @media (prefers-reduced-motion: reduce) {
   .site-footer a {
     transition: none;
+  }
+}
+
+/* Keep every admin surface and its text legible when dark mode is active. */
+.dark .admin-shell {
+  color: var(--text-primary);
+}
+
+.dark .admin-shell :is(
+  .admin-page-title,
+  .admin-section-heading h2,
+  .admin-form-section-heading h3,
+  .admin-operation-card strong,
+  .admin-method-name strong,
+  .admin-mobile-header strong,
+  .admin-sidebar-user strong,
+  .admin-list strong,
+  .admin-dashboard-table strong
+) {
+  color: var(--text-primary);
+}
+
+.dark .admin-shell :is(.admin-page-description, .admin-nav-label, .admin-sidebar-user small, .admin-hint, .admin-field) {
+  color: var(--text-secondary);
+}
+
+.dark .admin-shell :is(
+  .admin-toolbar,
+  .admin-editor,
+  .admin-table-wrap,
+  .admin-table-section,
+  .admin-settings-card,
+  .admin-weather-panel,
+  .admin-operation-card,
+  .admin-list,
+  .admin-callout
+) {
+  border-color: var(--border);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.dark .admin-shell :is(input:not([type='checkbox']):not([type='radio']), textarea, select) {
+  border-color: var(--border-strong);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  color-scheme: dark;
+}
+
+.dark .admin-shell :is(input, textarea)::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+.dark .admin-shell .admin-table th {
+  background: linear-gradient(180deg, var(--bg-secondary), var(--bg-tint));
+  color: var(--text-secondary);
+}
+
+.dark .admin-shell .admin-table td,
+.dark .admin-shell .admin-list,
+.dark .admin-shell .admin-list > div {
+  color: var(--text-primary);
+}
+
+.dark .admin-shell .admin-stat strong,
+.dark .admin-shell .admin-tab:hover,
+.dark .admin-shell .admin-menu-btn {
+  color: var(--text-primary);
+}
+
+.dark .admin-shell .admin-settings-card > .setting-row:hover {
+  background: var(--bg-tint);
+}
+
+.dark .admin-shell .admin-settings-card > .admin-form-actions {
+  background: var(--bg-secondary);
+}
+
+.dark .admin-shell .admin-switch-track {
+  background: #43546b;
+}
+
+.dark .admin-shell .admin-switch input:checked + .admin-switch-track {
+  background: var(--signal);
+}
+
+.dark .admin-modal,
+.dark .church-editor-modal,
+.dark .admin-crud-editor-modal {
+  border-color: var(--border-strong);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.dark .admin-modal-head,
+.dark .admin-modal-body,
+.dark .admin-modal-foot,
+.dark .admin-modal.admin-crud-editor-modal .admin-modal-head,
+.dark .admin-modal.admin-crud-editor-modal .admin-modal-foot,
+.dark .church-editor-modal .admin-modal-head,
+.dark .church-editor-modal .admin-modal-foot {
+  border-color: var(--border);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.dark .admin-modal-title,
+.dark .admin-modal .admin-form-section-heading h3,
+.dark .admin-modal .church-form-section-heading h3 {
+  color: var(--text-primary);
+}
+
+.dark .admin-modal :is(input:not([type='checkbox']):not([type='radio']), textarea, select) {
+  border-color: var(--border-strong);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  color-scheme: dark;
+}
+
+.dark .admin-modal .priest-selected-chips li {
+  border-color: var(--border-strong);
+  background: var(--bg-tint);
+  color: var(--text-primary);
+}
+
+.dark .admin-modal .church-upload-progress {
+  background: var(--bg-secondary);
+}
+
+.dark .admin-modal .church-upload-progress > span {
+  background: var(--signal-soft);
+}
+
+.dark .admin-modal .church-upload-progress small {
+  color: var(--text-primary);
+}
+
+.dark .admin-password-quality {
+  border-color: var(--border);
+  background: var(--bg-secondary);
+}
+
+.dark .admin-password-quality-heading,
+.dark .admin-password-rules {
+  color: var(--text-secondary);
+}
+
+.dark .admin-password-type-list span {
+  border-color: var(--border-strong);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+}
+
+.dark .admin-password-type-list span.is-valid {
+  border-color: #39795d;
+  background: #153b2b;
+  color: #9ce3bc;
+}
+
+.dark .admin-password-quality.is-weak .admin-password-quality-heading strong { color: #ffaaa4; }
+.dark .admin-password-quality.is-fair .admin-password-quality-heading strong { color: #f4d17c; }
+.dark .admin-password-quality.is-strong .admin-password-quality-heading strong { color: #9ce3bc; }
+.dark .admin-password-rules li.is-valid { color: #9ce3bc; }
+
+.admin-view-toggle {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.2rem;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--bg-primary);
+  padding: 0.2rem;
+}
+
+.admin-view-toggle button {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  padding: 0 0.6rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 650;
+}
+
+.admin-view-toggle button[aria-pressed='true'] {
+  background: var(--signal-soft);
+  color: var(--signal-strong);
+}
+
+.admin-view-toggle button:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 1px;
+}
+
+.admin-record-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.admin-record-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-primary);
+  box-shadow: var(--shadow-sm);
+  padding: 1rem;
+}
+
+.admin-record-card-head {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.admin-record-card-head h3 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.admin-record-card-details {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+}
+
+.admin-record-card-details > div {
+  display: grid;
+  grid-template-columns: minmax(82px, 0.42fr) minmax(0, 1fr);
+  gap: 0.6rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.55rem;
+}
+
+.admin-record-card-details dt {
+  color: var(--text-secondary);
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.admin-record-card-details dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-primary);
+  font-size: 0.72rem;
+}
+
+.admin-record-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+}
+
+.admin-record-card-actions button {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg-secondary);
+  padding: 0 0.65rem;
+  color: var(--signal-strong);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 650;
+}
+
+.admin-record-card-actions button.is-danger { color: var(--danger); }
+.admin-record-card-actions button:disabled { cursor: wait; opacity: 0.6; }
+
+.admin-record-card-image {
+  width: 100%;
+  height: 148px;
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  object-fit: cover;
+}
+
+.admin-payment-qr {
+  width: 88px;
+  height: 88px;
+  align-self: flex-start;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  object-fit: contain;
+  padding: 4px;
+}
+
+.admin-record-priest-photo {
+  display: grid;
+  width: 76px;
+  height: 76px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--signal-soft);
+  color: var(--signal-strong);
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.admin-record-card-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-sidebar-logout svg {
+  flex: 0 0 17px;
+}
+
+.dark .admin-record-card {
+  border-color: var(--border);
+  background: var(--bg-primary);
+}
+
+.dark .admin-record-card-head h3,
+.dark .admin-record-card-details dd {
+  color: var(--text-primary);
+}
+
+.dark .admin-record-card-details dt {
+  color: var(--text-secondary);
+}
+
+.dark .admin-record-card-actions button {
+  border-color: var(--border);
+  background: var(--bg-secondary);
+  color: var(--signal-strong);
+}
+
+.dark .admin-record-card-actions button.is-danger { color: var(--danger); }
+
+@media (max-width: 700px) {
+  .admin-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .admin-toolbar .admin-search-field {
+    flex-basis: 100%;
+  }
+
+  .admin-view-toggle button span {
+    display: none;
+  }
+
+  .admin-view-toggle button {
+    width: 36px;
+    padding: 0;
+  }
+
+  .admin-settings-card > .setting-row {
+    padding: 1rem;
+  }
+
+  .admin-settings-card > .admin-form-actions {
+    padding: 0.75rem 1rem;
   }
 }

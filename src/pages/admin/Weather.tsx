@@ -1,6 +1,7 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Activity, CloudSun, Droplets, RefreshCw, Thermometer, Wind } from 'lucide-react';
 import { AdminHeader, formatDate, useRealtimeCollection } from '@/components/admin/AdminPrimitives';
+import { AdminViewToggle, useAdminViewPreference } from '@/components/admin/AdminViewToggle';
 import { Button } from '@/components/ui/button';
 import { LiveWeatherMap } from '@/components/weather/LiveWeatherMap';
 import { db, push, ref, set } from '@/db/firebase';
@@ -38,6 +39,7 @@ function severityLabel(value: string) {
 }
 
 export default function AdminWeather() {
+  const { mode: viewMode, updateMode: setViewMode } = useAdminViewPreference('weather-events');
   const [regionName, setRegionName] = useState(regions[0].name);
   const [weather, setWeather] = useState<Weather | null>(null);
   const [weatherRegion, setWeatherRegion] = useState('');
@@ -304,9 +306,10 @@ export default function AdminWeather() {
           <div className="weather-history-actions">
             <label className="weather-history-filter">Filter region<select value={logsRegion} onChange={event => { setLogsRegion(event.target.value); setLogPage(0); }} aria-label="Filter weather events by region"><option value="all">All regions</option>{regions.map(item => <option key={item.name} value={item.name}>{item.name}</option>)}</select></label>
             <Button variant="secondary" onClick={exportCsv} disabled={!filteredLogs.length}>Export CSV</Button>
+            <AdminViewToggle mode={viewMode} onChange={setViewMode} />
           </div>
         </div>
-        <div className="admin-table-wrap">
+        <div className={`admin-table-wrap${viewMode === 'grid' ? ' is-grid-view' : ''}`}>
           {logsLoading ? (
             <SkeletonTable columns={5} rows={4} />
           ) : logsError ? (
@@ -323,6 +326,22 @@ export default function AdminWeather() {
               title="No severe weather events recorded"
               description="Events are recorded automatically when wind or rainfall passes the warning thresholds."
             />
+          ) : viewMode === 'grid' ? (
+            <div className="admin-record-grid">
+              {visibleLogs.map(item => (
+                <article className="admin-record-card" key={item.id}>
+                  <header className="admin-record-card-head">
+                    <h3>{item.eventType || 'Weather event'}</h3>
+                    <span className={`admin-status severity-${item.severity}`}>{severityLabel(String(item.severity ?? ''))}</span>
+                  </header>
+                  <dl className="admin-record-card-details">
+                    <div><dt>Date</dt><dd>{formatDate(item.date || item.createdAt)}</dd></div>
+                    <div><dt>Region</dt><dd>{item.region || '—'}</dd></div>
+                    <div><dt>Description</dt><dd>{item.description || '—'}</dd></div>
+                  </dl>
+                </article>
+              ))}
+            </div>
           ) : (
             <table className="admin-table" aria-label="Weather event log">
               <thead>

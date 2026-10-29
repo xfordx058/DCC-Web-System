@@ -5,6 +5,7 @@ import { useActivityLogs, type ActivityLogEntry } from '@/lib/activity-log';
 import { SkeletonTable } from '@/components/ui/skeleton';
 import { EmptyState, ErrorState } from '@/components/ui/states';
 import { Button } from '@/components/ui/button';
+import { AdminViewToggle, useAdminViewPreference } from '@/components/admin/AdminViewToggle';
 
 const PAGE_SIZE = 20;
 
@@ -35,6 +36,7 @@ export default function AdminLogs() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [page, setPage] = useState(0);
+  const { mode: viewMode, updateMode: setViewMode } = useAdminViewPreference('activity-logs');
 
   const sources = useMemo(
     () => Array.from(new Set(allLogs.map(item => item.source))).sort((left, right) => left.localeCompare(right)),
@@ -138,9 +140,10 @@ export default function AdminLogs() {
           />
         </label>
         <span aria-live="polite">{loading ? 'Loading…' : `${logs.length} records`}</span>
+        <AdminViewToggle mode={viewMode} onChange={setViewMode} />
       </div>
 
-      <div className="admin-table-wrap">
+      <div className={`admin-table-wrap${viewMode === 'grid' ? ' is-grid-view' : ''}`}>
         {loading ? (
           <SkeletonTable columns={6} />
         ) : error ? (
@@ -165,6 +168,23 @@ export default function AdminLogs() {
               ) : undefined
             }
           />
+        ) : viewMode === 'grid' ? (
+          <div className="admin-record-grid">
+            {pageLogs.map(item => (
+              <article className="admin-record-card" key={`${item.source}-${item.id}`}>
+                <header className="admin-record-card-head">
+                  <h3>{item.action || 'Recorded activity'}</h3>
+                  <span className={severityClass(String(item.severity))}>{severityLabel(String(item.severity))}</span>
+                </header>
+                <dl className="admin-record-card-details">
+                  <div><dt>Time</dt><dd>{displayTimestamp(item)}</dd></div>
+                  <div><dt>Source</dt><dd>{item.source}</dd></div>
+                  <div><dt>Admin / region</dt><dd>{item.admin || '—'}</dd></div>
+                  <div><dt>Details</dt><dd>{item.details || '—'}</dd></div>
+                </dl>
+              </article>
+            ))}
+          </div>
         ) : (
           <table className="admin-table" aria-label="Activity log">
             <thead>
