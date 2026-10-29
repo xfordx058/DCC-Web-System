@@ -25,6 +25,7 @@ const Statistics = lazy(() => import('./pages/public/Statistics'));
 const YearOf = lazy(() => import('./pages/public/YearOf'));
 const Contact = lazy(() => import('./pages/public/Contact'));
 const PublicDonations = lazy(() => import('./pages/public/Donations'));
+const Legal = lazy(() => import('./pages/public/Legal'));
 
 /** The admin shell and screens are only needed after signing in. */
 const AdminLayout = lazy(() => import('./components/layouts/AdminLayout'));
@@ -68,6 +69,8 @@ export default function App() {
               <Route path="year-of" element={<YearOf />} />
               <Route path="contact" element={<Contact />} />
               <Route path="donations" element={<PublicDonations />} />
+              <Route path="terms" element={<Legal />} />
+              <Route path="privacy-policy" element={<Legal />} />
               <Route path="clergy" element={<Clergy />} />
               <Route path="parishes" element={<Parishes />} />
               <Route path="parishes/:id" element={<ChurchDetail />} />

@@ -5,7 +5,7 @@ import LazyIframe from '@/components/ui/LazyIframe';
 import SmartImage from '@/components/ui/SmartImage';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState, ErrorState } from '@/components/ui/states';
-import { eventEndMs, eventStartMs, formatDate, getEventStartDate, getEventStatus, useRealtimeCollection } from '@/lib/firebase-data';
+import { eventEndMs, formatDate, formatEventTime, getEventStartDate, getEventStartMs, getEventStatus, useRealtimeCollection } from '@/lib/firebase-data';
 import { isRecordIdentifier, resolveStreamEmbed } from '@/lib/utils';
 
 const heroFallback: Array<{ id: string; title: string; subtitle: string; image?: string; isDefault?: boolean }> = [
@@ -178,7 +178,7 @@ export default function Home() {
     () =>
       events
         .filter(item => getEventStatus(item) !== 'past')
-        .sort((left, right) => (eventStartMs(getEventStartDate(left)) || eventEndMs(left.dateExpired) || 0) - (eventStartMs(getEventStartDate(right)) || eventEndMs(right.dateExpired) || 0))
+        .sort((left, right) => (getEventStartMs(left) || eventEndMs(left.dateExpired) || 0) - (getEventStartMs(right) || eventEndMs(right.dateExpired) || 0))
         .slice(0, 3),
     [events]
   );
@@ -357,7 +357,7 @@ export default function Home() {
                 <div className="event-body">
                   <h3 className="event-title">{event.title}</h3>
                   <p className="event-desc">{event.description}</p>
-                  <p className="event-date">{formatDate(event.eventDate || event.dateExpired)}{event.dateExpired && event.dateExpired !== event.eventDate ? ` – ${formatDate(event.dateExpired)}` : ''}</p>
+                  <p className="event-date">{formatDate(getEventStartDate(event))}{event.eventTime ? ` · ${formatEventTime(event.eventTime)}` : ''}{event.dateExpired && event.dateExpired !== event.eventDate ? ` – ${formatDate(event.dateExpired)}${event.endTime ? `, ${formatEventTime(event.endTime)}` : ''}` : event.endTime ? ` – ${formatEventTime(event.endTime)}` : ''}</p>
                 </div>
               </article>
             ))}

@@ -41,7 +41,9 @@ export interface DioceseEvent {
   title?: string;
   description?: string;
   eventDate?: string;
+  eventTime?: string;
   dateExpired?: string;
+  endTime?: string;
   image?: string;
 }
 

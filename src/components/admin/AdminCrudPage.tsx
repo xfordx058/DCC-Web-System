@@ -26,7 +26,7 @@ function recordLabel(item: Record<string, any>): string {
 type Field = {
   key: string;
   label: string;
-  type?: 'text' | 'textarea' | 'date' | 'number' | 'checkbox' | 'select' | 'file';
+  type?: 'text' | 'textarea' | 'date' | 'time' | 'number' | 'checkbox' | 'select' | 'file';
   required?: boolean;
   pattern?: string;
   title?: string;
@@ -487,7 +487,7 @@ export default function AdminCrudPage({
                 <input
                   type={field.type ?? 'text'}
                   required={field.required}
-                  value={field.type === 'date' ? String(value ?? '').slice(0, 10) : value ?? ''}
+                  value={field.type === 'date' ? String(value ?? '').slice(0, 10) : field.type === 'time' ? String(value ?? '').slice(0, 5) : value ?? ''}
                   placeholder={field.placeholder}
                   pattern={field.pattern}
                   title={field.title}

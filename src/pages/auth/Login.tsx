@@ -239,8 +239,7 @@ export default function Login() {
           </div>
 
           <p className="login-notice">
-            By logging in, you agree to our strict access policies and confidentiality agreements.
-            Unauthorized access is prohibited.
+            By signing in, you agree to the <Link to="/terms">Terms of Use</Link> and acknowledge the <Link to="/privacy-policy">Privacy Policy</Link>. Administrator access is limited to authorized users.
           </p>
         </div>
       </section>

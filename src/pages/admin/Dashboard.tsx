@@ -2,7 +2,7 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Activity, CalendarDays, Church, CloudSun, FileText, Megaphone, Plus, UserRound, Wrench } from 'lucide-react';
 import { AdminHeader, formatDate, useRealtimeCollection } from '@/components/admin/AdminPrimitives';
-import { eventStartMs, getEventStartDate, getEventStatus } from '@/lib/firebase-data';
+import { formatEventTime, getEventStartMs, getEventStartDate, getEventStatus } from '@/lib/firebase-data';
 import { Button } from '@/components/ui/button';
 import { Skeleton, SkeletonList, SkeletonStats } from '@/components/ui/skeleton';
 import { EmptyState, ErrorState } from '@/components/ui/states';
@@ -108,7 +108,7 @@ export default function AdminDashboard() {
     () =>
       [...events]
         .filter(item => getEventStatus(item) !== 'past')
-        .sort((a, b) => (eventStartMs(getEventStartDate(a)) || 0) - (eventStartMs(getEventStartDate(b)) || 0))
+        .sort((a, b) => (getEventStartMs(a) || 0) - (getEventStartMs(b) || 0))
         .slice(0, 6),
     [events]
   );
@@ -408,7 +408,7 @@ export default function AdminDashboard() {
               {upcomingEvents.slice(0, 5).map(item => (
                 <div key={item.id}>
                   <CalendarDays size={16} aria-hidden="true" />
-                  <span><strong>{item.title || 'Untitled event'}</strong><small>{formatDate(item.eventDate || item.dateExpired)} · {String(item.description ?? '').slice(0, 90)}</small></span>
+                  <span><strong>{item.title || 'Untitled event'}</strong><small>{formatDate(getEventStartDate(item))}{item.eventTime ? ` · ${formatEventTime(item.eventTime)}` : ''} · {String(item.description ?? '').slice(0, 90)}</small></span>
                 </div>
               ))}
             </div>

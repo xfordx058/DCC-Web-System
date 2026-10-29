@@ -7094,6 +7094,121 @@ button {
   line-height: 1.65;
 }
 
+.login-notice a {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.legal-document {
+  width: min(100%, 880px);
+  margin-inline: auto;
+}
+
+.legal-document > .public-page-heading {
+  margin-bottom: 0.5rem;
+}
+
+.legal-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin: 0.75rem 0 1.25rem;
+}
+
+.legal-switcher a {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.45rem 0.95rem;
+  color: var(--text-secondary);
+  background: var(--surface-soft);
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.legal-switcher a:hover,
+.legal-switcher a:focus-visible,
+.legal-switcher a.is-active {
+  border-color: var(--signal);
+  color: var(--text-primary);
+  background: var(--signal-soft);
+}
+
+.legal-content {
+  display: grid;
+  gap: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.75;
+}
+
+.legal-content > section {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: clamp(1rem, 3vw, 1.5rem);
+  background: var(--bg-primary);
+}
+
+.legal-content h2 {
+  margin: 0 0 0.65rem;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  line-height: 1.4;
+}
+
+.legal-content p {
+  margin: 0;
+}
+
+.legal-content ul {
+  display: grid;
+  gap: 0.7rem;
+  padding-left: 1.25rem;
+  margin: 0;
+}
+
+.legal-content li::marker {
+  color: var(--signal);
+}
+
+.legal-content strong {
+  color: var(--text-primary);
+}
+
+.legal-content a {
+  color: var(--signal-strong);
+  font-weight: 650;
+  text-underline-offset: 0.16em;
+  overflow-wrap: anywhere;
+}
+
+.legal-lede {
+  border-left: 3px solid var(--gold);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  padding: 1rem 1.15rem;
+  color: var(--text-primary);
+  background: var(--surface-soft);
+}
+
+.legal-contact-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: clamp(1rem, 3vw, 1.5rem);
+  background: var(--bg-tint);
+}
+
+.legal-contact-card p + p,
+.legal-contact-card a + p {
+  margin-top: 0.45rem;
+}
+
+.site-footer .footer-explore-links a {
+  text-decoration: none;
+}
+
 @media (max-width: 1024px) {
   .login-brand {
     padding: 3rem 1.75rem;

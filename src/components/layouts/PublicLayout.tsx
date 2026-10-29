@@ -296,6 +296,8 @@ export default function PublicLayout() {
               <Link to="/announcements">Latest updates</Link>
               <Link to="/streams">Live streams</Link>
               <Link to="/year-of">Year Of</Link>
+              <Link to="/terms">Terms of Use</Link>
+              <Link to="/privacy-policy">Privacy Policy</Link>
             </nav>
           </div>
 

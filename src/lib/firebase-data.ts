@@ -283,9 +283,34 @@ export function getEventEndDate(event: EventRecord) {
   return event.dateExpired || event.eventDate || event.startDate;
 }
 
+function eventTimestamp(dateValue: unknown, timeValue: unknown, endOfDay = false) {
+  if (!dateValue) return NaN;
+  const date = String(dateValue).slice(0, 10);
+  const time = String(timeValue ?? '').slice(0, 5);
+  const clock = /^\d{2}:\d{2}$/.test(time) ? `${time}:00` : endOfDay ? '23:59:59.999' : '00:00:00';
+  return new Date(`${date}T${clock}+08:00`).getTime();
+}
+
+export function getEventStartMs(event: EventRecord) {
+  return eventTimestamp(getEventStartDate(event), event.eventTime);
+}
+
+export function getEventEndMs(event: EventRecord) {
+  const endDate = getEventEndDate(event);
+  const endTime = event.endTime || event.timeExpired;
+  return eventTimestamp(endDate, endTime, true);
+}
+
+export function formatEventTime(value: unknown) {
+  const time = String(value ?? '').slice(0, 5);
+  if (!/^\d{2}:\d{2}$/.test(time)) return '';
+  const date = new Date(`1970-01-01T${time}:00Z`);
+  return new Intl.DateTimeFormat('en-PH', { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' }).format(date);
+}
+
 export function getEventStatus(event: EventRecord): 'upcoming' | 'ongoing' | 'past' {
-  const start = eventStartMs(getEventStartDate(event));
-  const end = eventEndMs(getEventEndDate(event));
+  const start = getEventStartMs(event);
+  const end = getEventEndMs(event);
   const now = Date.now();
   if (!Number.isNaN(end) && end < now) return 'past';
   if (!Number.isNaN(start) && start > now) return 'upcoming';

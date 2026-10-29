@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { ArrowRight, CalendarDays } from 'lucide-react';
-import { eventEndMs, eventStartMs, formatDate, getEventEndDate, getEventStartDate, getEventStatus } from '@/lib/firebase-data';
+import { eventEndMs, formatDate, formatEventTime, getEventEndDate, getEventStartDate, getEventStartMs, getEventStatus } from '@/lib/firebase-data';
 import { useRealtimeCollection } from '@/lib/firebase-data';
 import { SkeletonGrid } from '@/components/ui/skeleton';
 import { EmptyState, ErrorState } from '@/components/ui/states';
@@ -15,8 +15,8 @@ export default function Events() {
   const events = items
     .filter(item => period === 'past' ? getEventStatus(item) === 'past' : getEventStatus(item) !== 'past')
     .sort((left, right) => period === 'past'
-      ? (eventStartMs(getEventStartDate(right)) || 0) - (eventStartMs(getEventStartDate(left)) || 0)
-      : (eventStartMs(getEventStartDate(left)) || eventEndMs(getEventEndDate(left)) || 0) - (eventStartMs(getEventStartDate(right)) || eventEndMs(getEventEndDate(right)) || 0));
+      ? (getEventStartMs(right) || 0) - (getEventStartMs(left) || 0)
+      : (getEventStartMs(left) || eventEndMs(getEventEndDate(left)) || 0) - (getEventStartMs(right) || eventEndMs(getEventEndDate(right)) || 0));
 
   return (
     <div className="public-page-stack">
@@ -60,7 +60,13 @@ export default function Events() {
                 fallbackLabel="Event image unavailable"
               />
               <div>
-                <p className="event-date">{getEventStatus(item) === 'past' ? 'Past event' : getEventStatus(item) === 'ongoing' ? 'Happening now' : 'Upcoming'} · {formatDate(getEventStartDate(item))}{getEventEndDate(item) && getEventEndDate(item) !== getEventStartDate(item) ? ` – ${formatDate(getEventEndDate(item))}` : ''}</p>
+                <p className="event-date">
+                  {getEventStatus(item) === 'past' ? 'Past event' : getEventStatus(item) === 'ongoing' ? 'Happening now' : 'Upcoming'} · {formatDate(getEventStartDate(item))}
+                  {item.eventTime ? `, ${formatEventTime(item.eventTime)}` : ''}
+                  {getEventEndDate(item) && getEventEndDate(item) !== getEventStartDate(item)
+                    ? ` – ${formatDate(getEventEndDate(item))}${item.endTime ? `, ${formatEventTime(item.endTime)}` : ''}`
+                    : item.endTime ? ` – ${formatEventTime(item.endTime)}` : ''}
+                </p>
                 <h2>{item.title || 'Diocesan event'}</h2>
                 <p>{item.description}</p>
                 <Link className="read-more-btn" to="/#latest">
