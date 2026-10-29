@@ -103,16 +103,14 @@ export default function AdminLayout() {
               <small>Admin Portal</small>
             </div>
           </div>
-          <Tooltip label={toggleLabel}>
-            <button
-              type="button"
-              className="admin-sidebar-toggle"
-              onClick={() => setCollapsed(value => !value)}
-              aria-label={toggleLabel}
-            >
-              {collapsed ? <ChevronsRight size={18} aria-hidden /> : <ChevronsLeft size={18} aria-hidden />}
-            </button>
-          </Tooltip>
+          <button
+            type="button"
+            className="admin-sidebar-toggle"
+            onClick={() => setCollapsed(value => !value)}
+            aria-label={toggleLabel}
+          >
+            {collapsed ? <ChevronsRight size={18} aria-hidden /> : <ChevronsLeft size={18} aria-hidden />}
+          </button>
         </div>
 
         <nav className="admin-nav" aria-label="Admin sections">

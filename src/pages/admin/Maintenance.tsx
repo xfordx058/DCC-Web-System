@@ -1,6 +1,6 @@
-﻿import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { ExternalLink, Plus, Save, ShieldCheck, Trash2 } from 'lucide-react';
-import { AdminField, AdminHeader, formatDate, useRealtimeCollection, type RecordItem } from '@/components/admin/AdminPrimitives';
+import { AdminField, AdminHeader, useRealtimeCollection, type RecordItem } from '@/components/admin/AdminPrimitives';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/contexts/ToastContext';
 import { db, push, ref, remove, set } from '@/db/firebase';
@@ -28,6 +28,14 @@ const defaults: MaintenanceConfig = {
 const IPV4 = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
 
 type StatusBanner = { tone: 'active' | 'scheduled' | 'off'; label: string; note: string };
+
+function formatTimestamp(value: unknown) {
+  if (!value) return '—';
+  const date = new Date(String(value));
+  return Number.isNaN(date.getTime())
+    ? String(value)
+    : date.toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' });
+}
 
 function statusFor(config: MaintenanceConfig, now: number): StatusBanner {
   if (!config.enabled) {
@@ -73,6 +81,7 @@ export default function AdminMaintenance() {
   const [saving, setSaving] = useState(false);
   const [addingIp, setAddingIp] = useState(false);
   const [removingId, setRemovingId] = useState('');
+  const [now, setNow] = useState(() => Date.now());
   const { items: whitelist, loading: whitelistLoading, error: whitelistError, refetch: refetchWhitelist } =
     useRealtimeCollection('whitelistedIPs');
   const { logs, loading: logsLoading } = useActivityLogs();
@@ -83,7 +92,12 @@ export default function AdminMaintenance() {
   );
 
   const maintenanceLogs = logs.filter(item => item.source === 'Maintenance');
-  const status = statusFor(config, Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const status = statusFor(config, now);
   const hasUnsavedDraft = draft !== null;
 
   function update(patch: Partial<MaintenanceConfig>) {
@@ -95,6 +109,12 @@ export default function AdminMaintenance() {
     if (saving || configLoading) return;
     if (config.supportLink && !safeHttpUrl(config.supportLink)) {
       toast('error', 'The support link must start with http:// or https://.');
+      return;
+    }
+    const start = config.startAt ? Date.parse(config.startAt) : Number.NaN;
+    const end = config.endAt ? Date.parse(config.endAt) : Number.NaN;
+    if (!Number.isNaN(start) && !Number.isNaN(end) && end <= start) {
+      toast('error', 'The estimated end time must be after the start time.');
       return;
     }
     setSaving(true);
@@ -367,7 +387,7 @@ export default function AdminMaintenance() {
                 <div key={item.id}>
                   <span>
                     <strong>{item.action}</strong>
-                    <small>{item.admin} · {formatDate(item.createdAt)}</small>
+                    <small>{item.admin} · {formatTimestamp(item.createdAt)}</small>
                   </span>
                 </div>
               ))}

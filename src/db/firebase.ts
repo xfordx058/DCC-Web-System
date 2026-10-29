@@ -29,14 +29,35 @@ import {
 } from 'firebase/database';
 import { getStorage, ref as storageRef, uploadBytes, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
+const requiredEnv = {
+  VITE_FIREBASE_API_KEY: import.meta.env.VITE_FIREBASE_API_KEY,
+  VITE_FIREBASE_AUTH_DOMAIN: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  VITE_FIREBASE_DATABASE_URL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+  VITE_FIREBASE_PROJECT_ID: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  VITE_FIREBASE_STORAGE_BUCKET: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  VITE_FIREBASE_MESSAGING_SENDER_ID: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  VITE_FIREBASE_APP_ID: import.meta.env.VITE_FIREBASE_APP_ID,
+};
+
+const missingEnv = Object.entries(requiredEnv)
+  .filter(([, value]) => !value)
+  .map(([key]) => key);
+
+if (missingEnv.length > 0) {
+  throw new Error(
+    `Firebase configuration is incomplete. Missing: ${missingEnv.join(', ')}. ` +
+      'Copy .env.example to .env and set every VITE_FIREBASE_* value.'
+  );
+}
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: requiredEnv.VITE_FIREBASE_API_KEY,
+  authDomain: requiredEnv.VITE_FIREBASE_AUTH_DOMAIN,
+  databaseURL: requiredEnv.VITE_FIREBASE_DATABASE_URL,
+  projectId: requiredEnv.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: requiredEnv.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: requiredEnv.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: requiredEnv.VITE_FIREBASE_APP_ID,
 };
 
 const app = initializeApp(firebaseConfig);

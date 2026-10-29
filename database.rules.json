@@ -1,0 +1,77 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": "auth != null && root.child('admins').child(auth.uid).exists()",
+
+    "admins": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).exists()",
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).exists())",
+        "name": { ".validate": "newData.isString()" },
+        "email": { ".validate": "newData.isString()" },
+        "role": { ".validate": "newData.isString()" },
+        "createdAt": { ".validate": "newData.isString()" },
+        "updatedAt": { ".validate": "newData.isString()" },
+        "createdBy": { ".validate": "newData.isString()" }
+      }
+    },
+
+    "settings": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).exists()"
+    },
+
+    "activityLogs": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).exists()"
+    },
+
+    "maintenanceLogs": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).exists()"
+    },
+
+    "weatherEventLogs": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).exists()"
+    },
+
+    "donations": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).exists()"
+    },
+
+    "maintenanceMode": {
+      "config": {
+        ".read": true
+      }
+    },
+
+    "whitelistedIPs": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).exists() || root.child('maintenanceMode/config/enabled').val() === true || root.child('maintenanceMode/config/enabled').val() === 'true'"
+    },
+
+    "donationOptions": {
+      ".read": true
+    },
+    "bishops": {
+      ".read": true
+    },
+    "churches": {
+      ".read": true
+    },
+    "priests": {
+      ".read": true
+    },
+    "events": {
+      ".read": true
+    },
+    "yearOf": {
+      ".read": true
+    },
+    "streams": {
+      ".read": true
+    },
+    "heroes": {
+      ".read": true
+    },
+    "announcements": {
+      ".read": true
+    }
+  }
+}

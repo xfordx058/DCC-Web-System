@@ -1,4 +1,4 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -6220,94 +6220,269 @@ button {
 }
 
 .maintenance-screen {
+  position: relative;
   display: grid;
+  overflow: hidden;
   min-height: 100vh;
   place-content: center;
   justify-items: center;
-  padding: 2rem;
+  padding: clamp(1.25rem, 4vw, 3rem);
   background:
-    radial-gradient(900px 400px at 20% -10%, rgba(201, 162, 39, 0.12), transparent 55%),
-    linear-gradient(135deg, var(--navy-deep), var(--navy));
+    radial-gradient(ellipse at 50% 0%, rgba(201, 162, 39, 0.18), transparent 48%),
+    radial-gradient(circle at 8% 88%, rgba(35, 116, 97, 0.14), transparent 28%),
+    linear-gradient(145deg, #071a1a, #102d2c 52%, #0a2024);
   color: var(--ink-on-dark);
   text-align: center;
 }
 
-.maintenance-screen .admin-eyebrow {
-  color: var(--gold);
+.maintenance-screen::before,
+.maintenance-screen::after {
+  position: absolute;
+  width: min(58vw, 560px);
+  aspect-ratio: 1;
+  border: 1px solid rgba(232, 204, 128, 0.08);
+  border-radius: 50%;
+  content: '';
+  pointer-events: none;
+}
+
+.maintenance-screen::before {
+  top: -36vw;
+  right: -22vw;
+}
+
+.maintenance-screen::after {
+  bottom: -43vw;
+  left: -29vw;
+  width: min(72vw, 700px);
+}
+
+.maintenance-card {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 680px);
+  padding: clamp(1.5rem, 5vw, 3.5rem);
+  border: 1px solid rgba(238, 222, 178, 0.18);
+  border-radius: 28px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025));
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.24), inset 0 1px rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(14px);
+}
+
+.maintenance-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9rem;
+  text-align: left;
+}
+
+.maintenance-logo-frame {
+  display: grid;
+  width: 68px;
+  height: 68px;
+  flex: 0 0 auto;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(230, 198, 119, 0.38);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 0 0 6px rgba(230, 198, 119, 0.07);
+}
+
+.maintenance-logo-frame img {
+  width: 76%;
+  height: 76%;
+  object-fit: contain;
+}
+
+.maintenance-brand-copy {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.maintenance-brand-copy strong {
+  color: #fffaf0;
+  font-family: var(--font-display, inherit);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.maintenance-brand-copy small {
+  color: rgba(236, 231, 216, 0.62);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.maintenance-rule {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 2rem 0 1.8rem;
+}
+
+.maintenance-rule::before,
+.maintenance-rule::after {
+  height: 1px;
+  flex: 1;
+  background: linear-gradient(90deg, transparent, rgba(230, 198, 119, 0.32));
+  content: '';
+}
+
+.maintenance-rule::after {
+  transform: rotate(180deg);
+}
+
+.maintenance-rule span,
+.maintenance-kicker span {
+  width: 7px;
+  height: 7px;
+  border: 1px solid #e6c677;
+  transform: rotate(45deg);
+}
+
+.maintenance-kicker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  margin: 0 0 0.7rem;
+  color: #e6c677;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+}
+
+.maintenance-reason {
+  margin: 0.85rem auto 0;
+  color: rgba(239, 232, 212, 0.62) !important;
+  font-size: 0.78rem !important;
+}
+
+.maintenance-message {
+  margin: 0 auto;
+  color: rgba(239, 232, 212, 0.78) !important;
+  font-size: 0.94rem !important;
 }
 
 .maintenance-screen h1 {
-  margin: 0.5rem 0 1rem;
-  color: var(--ink-on-dark);
-  font-size: clamp(2.2rem, 6vw, 4rem);
+  margin: 0 0 1rem;
+  color: #fffaf0;
+  font-size: clamp(2.25rem, 6vw, 3.75rem);
   font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.045em;
+  line-height: 1.05;
 }
 
-.maintenance-screen > p {
-  max-width: 620px;
-  color: var(--muted-on-dark);
-  font-size: 0.9rem;
-  line-height: 1.9;
+.maintenance-screen.is-minimal .maintenance-card {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
-.maintenance-mark {
-  display: grid;
-  width: 60px;
-  height: 60px;
-  margin-bottom: 1.75rem;
-  place-items: center;
-  border: 1px solid var(--border-on-dark);
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--gold);
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+.maintenance-screen.is-minimal .maintenance-rule {
+  margin-top: 1.5rem;
 }
 
 .maintenance-countdown {
-  width: min(100%, 460px);
+  display: grid;
+  width: min(100%, 440px);
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
-  margin: 1.75rem 0;
+  gap: 0.65rem;
+  margin: 1.8rem auto 0;
 }
 
 .maintenance-countdown span {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--border-on-dark);
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.05);
-  padding: 1rem 0.5rem;
-  color: var(--muted-on-dark);
-  font-size: 0.66rem;
-  letter-spacing: 0.12em;
+  gap: 0.3rem;
+  border: 1px solid rgba(238, 222, 178, 0.14);
+  border-radius: 16px;
+  background: rgba(4, 19, 19, 0.24);
+  padding: 0.9rem 0.5rem;
+  color: rgba(236, 231, 216, 0.62);
+  font-size: 0.62rem;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
 }
 
 .maintenance-countdown strong {
-  color: var(--gold-bright);
-  font-size: 1.6rem;
+  color: #f1d58e;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(1.45rem, 4vw, 2rem);
   font-weight: 700;
 }
 
+.maintenance-countdown small {
+  color: inherit;
+  font-size: inherit;
+}
+
+.maintenance-footer {
+  margin-top: 1.8rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid rgba(238, 222, 178, 0.13);
+}
+
 .maintenance-contact {
-  margin: 1rem 0 0;
-  color: var(--muted-on-dark);
-  font-size: 0.78rem;
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  color: rgba(236, 231, 216, 0.72);
+  font-size: 0.76rem;
+}
+
+.maintenance-contact > span:first-child {
+  color: rgba(236, 231, 216, 0.46);
 }
 
 .maintenance-support {
-  color: var(--gold);
-  font-size: 0.75rem;
+  display: inline-flex;
+  gap: 0.4rem;
+  margin-top: 0.8rem;
+  color: #e6c677;
+  font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-decoration: underline;
+  letter-spacing: 0.04em;
+  text-decoration: none;
 }
 
 .maintenance-support:hover {
-  color: var(--gold-bright);
+  color: #fff0bd;
+}
+
+.maintenance-thanks {
+  position: relative;
+  z-index: 1;
+  margin: 1rem 0 0;
+  color: rgba(236, 231, 216, 0.42);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 520px) {
+  .maintenance-screen {
+    padding: 1rem;
+  }
+
+  .maintenance-card {
+    border-radius: 22px;
+  }
+
+  .maintenance-logo-frame {
+    width: 56px;
+    height: 56px;
+  }
+
+  .maintenance-brand-copy strong {
+    font-size: 0.9rem;
+  }
+
+  .maintenance-brand-copy small {
+    font-size: 0.58rem;
+  }
 }
 
 /* --- Collapsed sidebar (desktop) ----------------------------------------- */
@@ -7065,6 +7240,94 @@ button {
 .admin-account-form .admin-hint,
 .admin-modal .admin-hint {
   font-weight: 400;
+}
+
+.admin-password-quality {
+  display: grid;
+  gap: 0.55rem;
+  width: 100%;
+  margin-top: 0.2rem;
+  padding: 0.8rem 0.85rem;
+  border: 1px solid #e3e8ef;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.admin-password-quality-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+}
+
+.admin-password-quality-heading strong {
+  color: #788397;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.admin-password-strength-meter {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.3rem;
+}
+
+.admin-password-strength-meter span {
+  height: 4px;
+  border-radius: 99px;
+  background: #dfe5eb;
+}
+
+.admin-password-quality.is-weak .admin-password-strength-meter .is-filled { background: #d85a5a; }
+.admin-password-quality.is-fair .admin-password-strength-meter .is-filled { background: #d09a30; }
+.admin-password-quality.is-strong .admin-password-strength-meter .is-filled { background: #28845e; }
+.admin-password-quality.is-weak .admin-password-quality-heading strong { color: #b83939; }
+.admin-password-quality.is-fair .admin-password-quality-heading strong { color: #9a6b12; }
+.admin-password-quality.is-strong .admin-password-quality-heading strong { color: #24734f; }
+
+.admin-password-rules {
+  display: grid;
+  gap: 0.38rem;
+  margin: 0;
+  padding: 0;
+  color: #778196;
+  font-size: 0.68rem;
+  font-weight: 400;
+  list-style: none;
+}
+
+.admin-password-rules li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.admin-password-rules li svg { flex: 0 0 auto; }
+.admin-password-rules li.is-valid { color: #26734f; }
+
+.admin-password-rules .admin-password-type-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding-left: 1.3rem;
+}
+
+.admin-password-type-list span {
+  border: 1px solid #e0e5eb;
+  border-radius: 999px;
+  background: #fff;
+  padding: 0.22rem 0.48rem;
+  color: #707b8d;
+  font-size: 0.61rem;
+  line-height: 1.3;
+}
+
+.admin-password-type-list span.is-valid {
+  border-color: #b8ddc8;
+  background: #edf8f1;
+  color: #26734f;
 }
 
 .admin-administrators .admin-section-heading {

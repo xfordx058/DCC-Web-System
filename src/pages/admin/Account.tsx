@@ -1,5 +1,5 @@
 ﻿import { FormEvent, useEffect, useState } from 'react';
-import { Eye, EyeOff, KeyRound, Mail, Save, UserPlus, UserRound, UsersRound } from 'lucide-react';
+import { Check, Circle, Eye, EyeOff, KeyRound, Mail, Save, UserPlus, UserRound, UsersRound } from 'lucide-react';
 import { AdminField, AdminHeader } from '@/components/admin/AdminPrimitives';
 import { AdminModal } from '@/components/admin/AdminModal';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { auth, db, ref, update, updateEmail, updatePassword, updateProfile } from '@/db/firebase';
 import { recordActivity } from '@/lib/activity-log';
-import { createAdministrator, isAdministrator, MIN_ADMIN_PASSWORD_LENGTH, useAdmins } from '@/lib/admins';
+import {
+  createAdministrator,
+  getAdministratorPasswordError,
+  getAdministratorPasswordQuality,
+  isAdministrator,
+  MAX_ADMIN_PASSWORD_LENGTH,
+  MIN_ADMIN_PASSWORD_LENGTH,
+  useAdmins,
+} from '@/lib/admins';
 import { SkeletonList } from '@/components/ui/skeleton';
 import { ErrorState, Spinner } from '@/components/ui/states';
 
@@ -41,6 +49,11 @@ export default function AdminAccount() {
   const [administratorForm, setAdministratorForm] = useState<AdministratorForm>(emptyAdministratorForm);
   const [administratorErrors, setAdministratorErrors] = useState<Record<string, string>>({});
   const [showAdministratorPassword, setShowAdministratorPassword] = useState(false);
+  const administratorPasswordQuality = getAdministratorPasswordQuality(
+    administratorForm.name,
+    administratorForm.email,
+    administratorForm.password
+  );
 
   const canManageAdministrators = isAdministrator(user?.uid, admins);
 
@@ -54,6 +67,18 @@ export default function AdminAccount() {
     setAdministratorErrors({});
     setShowAdministratorPassword(false);
     setAdministratorOpen(true);
+  }
+
+  function updateAdministratorField<K extends keyof AdministratorForm>(field: K, value: AdministratorForm[K]) {
+    setAdministratorForm(current => ({ ...current, [field]: value }));
+    setAdministratorErrors(current => {
+      const next = { ...current };
+      delete next[field];
+      delete next.form;
+      if (field === 'password') delete next.confirmPassword;
+      if (field === 'name' || field === 'email') delete next.password;
+      return next;
+    });
   }
 
   async function saveAccount(event: FormEvent) {
@@ -111,11 +136,10 @@ export default function AdminAccount() {
     const formName = administratorForm.name.trim();
     const formEmail = administratorForm.email.trim().toLowerCase();
     const errors: Record<string, string> = {};
-    if (formName.length < 2) errors.name = "Enter the administrator's full name.";
-    if (!EMAIL_PATTERN.test(formEmail)) errors.email = 'Enter a valid email address.';
-    if (administratorForm.password.length < MIN_ADMIN_PASSWORD_LENGTH) {
-      errors.password = `Password must be at least ${MIN_ADMIN_PASSWORD_LENGTH} characters.`;
-    }
+    if (formName.length < 2 || formName.length > 100) errors.name = 'Enter a name between 2 and 100 characters.';
+    if (!EMAIL_PATTERN.test(formEmail) || formEmail.length > 254) errors.email = 'Enter a valid email address.';
+    const passwordError = getAdministratorPasswordError(formName, formEmail, administratorForm.password);
+    if (passwordError) errors.password = passwordError;
     if (administratorForm.password !== administratorForm.confirmPassword) {
       errors.confirmPassword = 'Passwords do not match.';
     }
@@ -307,12 +331,14 @@ export default function AdminAccount() {
               <span className="admin-input-icon" aria-hidden="true"><UserRound size={16} /></span>
               <input
                 id="new-admin-name"
-                autoComplete="off"
+                autoComplete="name"
+                required
+                maxLength={100}
                 aria-required="true"
                 aria-invalid={Boolean(administratorErrors.name)}
                 aria-describedby={administratorErrors.name ? 'new-admin-name-error' : undefined}
                 value={administratorForm.name}
-                onChange={event => setAdministratorForm(current => ({ ...current, name: event.target.value }))}
+                onChange={event => updateAdministratorField('name', event.target.value)}
               />
             </div>
             {administratorErrors.name ? (
@@ -325,12 +351,14 @@ export default function AdminAccount() {
               <input
                 id="new-admin-email"
                 type="email"
-                autoComplete="off"
+                autoComplete="email"
+                required
+                maxLength={254}
                 aria-required="true"
                 aria-invalid={Boolean(administratorErrors.email)}
                 aria-describedby={administratorErrors.email ? 'new-admin-email-error' : undefined}
                 value={administratorForm.email}
-                onChange={event => setAdministratorForm(current => ({ ...current, email: event.target.value }))}
+                onChange={event => updateAdministratorField('email', event.target.value)}
               />
             </div>
             {administratorErrors.email ? (
@@ -345,11 +373,14 @@ export default function AdminAccount() {
                 id="new-admin-password"
                 type={showAdministratorPassword ? 'text' : 'password'}
                 autoComplete="new-password"
+                required
+                minLength={MIN_ADMIN_PASSWORD_LENGTH}
+                maxLength={MAX_ADMIN_PASSWORD_LENGTH}
                 aria-required="true"
                 aria-invalid={Boolean(administratorErrors.password)}
                 aria-describedby={administratorErrors.password ? 'new-admin-password-error' : 'new-admin-password-hint'}
                 value={administratorForm.password}
-                onChange={event => setAdministratorForm(current => ({ ...current, password: event.target.value }))}
+                onChange={event => updateAdministratorField('password', event.target.value)}
               />
               <button
                 type="button"
@@ -361,11 +392,44 @@ export default function AdminAccount() {
                 {showAdministratorPassword ? <EyeOff size={16} aria-hidden /> : <Eye size={16} aria-hidden />}
               </button>
             </div>
-            {administratorErrors.password ? (
-              <small id="new-admin-password-error" className="admin-error" role="alert">{administratorErrors.password}</small>
-            ) : (
-              <small id="new-admin-password-hint" className="admin-hint">Use at least {MIN_ADMIN_PASSWORD_LENGTH} characters.</small>
-            )}
+            <div className={`admin-password-quality is-${administratorForm.password ? administratorPasswordQuality.strength : 'empty'}`}>
+              <div className="admin-password-quality-heading">
+                <span>Password strength</span>
+                <strong aria-live="polite">
+                  {administratorForm.password
+                    ? administratorPasswordQuality.strength.charAt(0).toUpperCase() + administratorPasswordQuality.strength.slice(1)
+                    : 'Enter a password'}
+                </strong>
+              </div>
+              <div className="admin-password-strength-meter" role="progressbar" aria-label="Password strength" aria-valuemin={0} aria-valuemax={3} aria-valuenow={!administratorForm.password ? 0 : administratorPasswordQuality.strength === 'strong' ? 3 : administratorPasswordQuality.strength === 'fair' ? 2 : 1}>
+                {[1, 2, 3].map(level => (
+                  <span key={level} className={administratorForm.password && level <= (administratorPasswordQuality.strength === 'strong' ? 3 : administratorPasswordQuality.strength === 'fair' ? 2 : 1) ? 'is-filled' : ''} />
+                ))}
+              </div>
+              <ul className="admin-password-rules" id="new-admin-password-hint">
+                <li className={administratorPasswordQuality.lengthValid ? 'is-valid' : ''}>
+                  {administratorPasswordQuality.lengthValid ? <Check size={13} aria-hidden /> : <Circle size={13} aria-hidden />}
+                  At least {MIN_ADMIN_PASSWORD_LENGTH} characters
+                </li>
+                <li className={administratorPasswordQuality.characterTypes >= 3 ? 'is-valid' : ''}>
+                  {administratorPasswordQuality.characterTypes >= 3 ? <Check size={13} aria-hidden /> : <Circle size={13} aria-hidden />}
+                  Use at least 3 of these 4 types ({administratorPasswordQuality.characterTypes}/4)
+                </li>
+                <li className="admin-password-type-list" aria-label="Password character types">
+                  <span className={administratorPasswordQuality.hasLowercase ? 'is-valid' : ''}>a–z lowercase</span>
+                  <span className={administratorPasswordQuality.hasUppercase ? 'is-valid' : ''}>A–Z uppercase</span>
+                  <span className={administratorPasswordQuality.hasNumber ? 'is-valid' : ''}>0–9 numbers</span>
+                  <span className={administratorPasswordQuality.hasSymbol ? 'is-valid' : ''}>Symbols: ! @ # $ % &amp; * - _ = +</span>
+                </li>
+                <li className={administratorForm.password && !administratorPasswordQuality.containsPersonalInfo ? 'is-valid' : ''}>
+                  {administratorForm.password && !administratorPasswordQuality.containsPersonalInfo ? <Check size={13} aria-hidden /> : <Circle size={13} aria-hidden />}
+                  Does not include name or email parts
+                </li>
+              </ul>
+              {administratorErrors.password ? (
+                <small id="new-admin-password-error" className="admin-error" role="alert">{administratorErrors.password}</small>
+              ) : null}
+            </div>
           </AdminField>
           <AdminField label="Confirm password" className="admin-field-password">
             <div className="admin-input-wrap has-icon has-reveal">
@@ -374,11 +438,14 @@ export default function AdminAccount() {
                 id="new-admin-password-confirm"
                 type={showAdministratorPassword ? 'text' : 'password'}
                 autoComplete="new-password"
+                required
+                minLength={MIN_ADMIN_PASSWORD_LENGTH}
+                maxLength={MAX_ADMIN_PASSWORD_LENGTH}
                 aria-required="true"
                 aria-invalid={Boolean(administratorErrors.confirmPassword)}
                 aria-describedby={administratorErrors.confirmPassword ? 'new-admin-password-confirm-error' : undefined}
                 value={administratorForm.confirmPassword}
-                onChange={event => setAdministratorForm(current => ({ ...current, confirmPassword: event.target.value }))}
+                onChange={event => updateAdministratorField('confirmPassword', event.target.value)}
               />
               <button
                 type="button"

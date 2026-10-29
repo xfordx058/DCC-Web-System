@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate, useLocation, Link } from 'react-router-dom';
 import { ShieldAlert } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { isAdministrator, useAdmins } from '@/lib/admins';
+import { useAdminAccess } from '@/lib/admins';
 import { ErrorState, Spinner } from '@/components/ui/states';
 
 /**
@@ -15,10 +15,10 @@ import { ErrorState, Spinner } from '@/components/ui/states';
  */
 export default function RequireAuth({ children }: { children: React.ReactElement }) {
   const { user, loading, logout } = useAuth();
-  const { admins, loading: adminsLoading, error, refetch } = useAdmins();
+  const { isAdmin, loading: accessLoading, error, refetch } = useAdminAccess();
   const location = useLocation();
 
-  if (loading || (user && adminsLoading)) {
+  if (loading || accessLoading) {
     return (
       <div className="admin-auth-state" role="status" aria-live="polite">
         <Spinner label="Checking authentication" />
@@ -47,7 +47,7 @@ export default function RequireAuth({ children }: { children: React.ReactElement
     );
   }
 
-  if (!isAdministrator(user.uid, admins)) {
+  if (!isAdmin) {
     return (
       <main className="admin-auth-state">
         <div className="admin-auth-card ui-state is-error" role="alert">
