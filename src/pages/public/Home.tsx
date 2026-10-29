@@ -5,7 +5,7 @@ import LazyIframe from '@/components/ui/LazyIframe';
 import SmartImage from '@/components/ui/SmartImage';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState, ErrorState } from '@/components/ui/states';
-import { eventEndMs, formatDate, isEventActive, useRealtimeCollection } from '@/lib/firebase-data';
+import { eventEndMs, eventStartMs, formatDate, getEventStartDate, getEventStatus, useRealtimeCollection } from '@/lib/firebase-data';
 import { isRecordIdentifier, resolveStreamEmbed } from '@/lib/utils';
 
 const heroFallback: Array<{ id: string; title: string; subtitle: string; image?: string; isDefault?: boolean }> = [
@@ -177,8 +177,8 @@ export default function Home() {
   const upcomingEvents = useMemo(
     () =>
       events
-        .filter(item => isEventActive(item.dateExpired))
-        .sort((left, right) => (eventEndMs(left.dateExpired) || 0) - (eventEndMs(right.dateExpired) || 0))
+        .filter(item => getEventStatus(item) !== 'past')
+        .sort((left, right) => (eventStartMs(getEventStartDate(left)) || eventEndMs(left.dateExpired) || 0) - (eventStartMs(getEventStartDate(right)) || eventEndMs(right.dateExpired) || 0))
         .slice(0, 3),
     [events]
   );
@@ -357,7 +357,7 @@ export default function Home() {
                 <div className="event-body">
                   <h3 className="event-title">{event.title}</h3>
                   <p className="event-desc">{event.description}</p>
-                  {event.dateExpired ? <p className="event-date">Until {formatDate(event.dateExpired)}</p> : null}
+                  <p className="event-date">{formatDate(event.eventDate || event.dateExpired)}{event.dateExpired && event.dateExpired !== event.eventDate ? ` – ${formatDate(event.dateExpired)}` : ''}</p>
                 </div>
               </article>
             ))}

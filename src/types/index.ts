@@ -40,6 +40,7 @@ export interface DioceseEvent {
   id?: string;
   title?: string;
   description?: string;
+  eventDate?: string;
   dateExpired?: string;
   image?: string;
 }

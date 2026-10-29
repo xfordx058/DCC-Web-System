@@ -57,6 +57,7 @@ type Props = {
   sort?: (items: RecordItem[]) => RecordItem[];
   hideHeader?: boolean;
   logSource?: string;
+  validate?: (form: Record<string, any>) => string | null;
 };
 
 const PAGE_SIZE = 10;
@@ -75,6 +76,7 @@ export default function AdminCrudPage({
   sort,
   hideHeader = false,
   logSource = 'Content',
+  validate,
 }: Props) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -177,6 +179,11 @@ export default function AdminCrudPage({
   async function handleSave(event: FormEvent) {
     event.preventDefault();
     if (saving) return;
+    const validationError = validate?.(form);
+    if (validationError) {
+      toast('error', validationError);
+      return;
+    }
     setSaving(true);
     setUploadPercent(0);
     try {

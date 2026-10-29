@@ -1,7 +1,8 @@
 ﻿import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Activity, CalendarDays, Church, CloudSun, FileText, Megaphone, Plus, UserRound, Wrench } from 'lucide-react';
-import { AdminHeader, eventEndMs, formatDate, isEventActive, useRealtimeCollection } from '@/components/admin/AdminPrimitives';
+import { AdminHeader, formatDate, useRealtimeCollection } from '@/components/admin/AdminPrimitives';
+import { eventStartMs, getEventStartDate, getEventStatus } from '@/lib/firebase-data';
 import { Button } from '@/components/ui/button';
 import { Skeleton, SkeletonList, SkeletonStats } from '@/components/ui/skeleton';
 import { EmptyState, ErrorState } from '@/components/ui/states';
@@ -106,8 +107,8 @@ export default function AdminDashboard() {
   const upcomingEvents = useMemo(
     () =>
       [...events]
-        .filter(item => isEventActive(item.dateExpired))
-        .sort((a, b) => (eventEndMs(a.dateExpired) || 0) - (eventEndMs(b.dateExpired) || 0))
+        .filter(item => getEventStatus(item) !== 'past')
+        .sort((a, b) => (eventStartMs(getEventStartDate(a)) || 0) - (eventStartMs(getEventStartDate(b)) || 0))
         .slice(0, 6),
     [events]
   );
@@ -164,14 +165,8 @@ export default function AdminDashboard() {
     color: ['#0f4c81', '#0b2545', '#c9a227', '#4f7da5', '#9c7b22', '#7288a0'][index],
   }));
   const distributionTotal = distribution.reduce((sum, item) => sum + (item.error ? 0 : item.value), 0);
-  let distributionCursor = 0;
-  const distributionGradient = distribution
-    .filter(item => !item.error && item.value > 0)
-    .map(item => {
-      const from = distributionCursor;
-      distributionCursor += item.value / Math.max(1, distributionTotal) * 100;
-      return `${item.color} ${from}% ${distributionCursor}%`;
-    }).join(', ');
+  const donutCircumference = 2 * Math.PI * 65;
+  let donutOffset = 0;
 
   const latestChurches = [...churches]
     .sort((left, right) => {
@@ -378,12 +373,20 @@ export default function AdminDashboard() {
             <EmptyState compact icon={FileText} title="No content records yet" description="Published and managed records will be summarized here." />
           ) : (
             <div className="admin-distribution">
-              <div className="admin-donut" role="img" aria-label={`${distributionTotal} total records. ${distribution.map(item => `${item.label}: ${item.value}`).join(', ')}.`} style={{ background: `conic-gradient(${distributionGradient})` }}>
+              <div className="admin-donut" role="group" aria-label={`Content distribution, ${distributionTotal} records`}>
+                <svg viewBox="0 0 152 152" aria-label={`${distribution.map(item => `${item.label}: ${item.value}`).join(', ')}.`} className="admin-donut-chart">
+                  {distribution.map(item => {
+                    const segmentLength = item.value / Math.max(1, distributionTotal) * donutCircumference;
+                    const offset = donutOffset;
+                    donutOffset += segmentLength;
+                    return <circle key={item.label} cx="76" cy="76" r="65" fill="none" stroke={item.color} strokeWidth="22" strokeDasharray={`${segmentLength} ${donutCircumference - segmentLength}`} strokeDashoffset={-offset} className="admin-donut-segment"><title>{`${item.label}: ${item.value} records`}</title></circle>;
+                  })}
+                </svg>
                 <span><strong>{distributionTotal}</strong>records</span>
               </div>
               <ul className="admin-distribution-legend">
                 {distribution.map(item => (
-                  <li key={item.label}><span style={{ backgroundColor: item.color }} aria-hidden="true" /><span>{item.label}</span><strong>{item.value}</strong></li>
+                  <li key={item.label} title={`${item.label}: ${item.value} records`}><span style={{ backgroundColor: item.color }} aria-hidden="true" /><span>{item.label}</span><strong>{item.value}</strong></li>
                 ))}
               </ul>
             </div>
@@ -405,7 +408,7 @@ export default function AdminDashboard() {
               {upcomingEvents.slice(0, 5).map(item => (
                 <div key={item.id}>
                   <CalendarDays size={16} aria-hidden="true" />
-                  <span><strong>{item.title || 'Untitled event'}</strong><small>{formatDate(item.dateExpired)} · {String(item.description ?? '').slice(0, 90)}</small></span>
+                  <span><strong>{item.title || 'Untitled event'}</strong><small>{formatDate(item.eventDate || item.dateExpired)} · {String(item.description ?? '').slice(0, 90)}</small></span>
                 </div>
               ))}
             </div>

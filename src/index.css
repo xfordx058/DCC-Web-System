@@ -2290,6 +2290,40 @@ button {
   line-height: 1.3;
 }
 
+.public-event-period {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 0.3rem;
+  padding: 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-soft);
+}
+
+.public-event-period button {
+  min-height: 2.4rem;
+  padding: 0.45rem 0.9rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.public-event-period button:hover,
+.public-event-period button:focus-visible {
+  color: var(--text-primary);
+  background: var(--bg-tint);
+}
+
+.public-event-period button.is-active {
+  background: var(--surface);
+  color: var(--text-primary);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 12%);
+}
+
 .public-content-card h2,
 .public-stream-card h2,
 .public-theme-card h2,
@@ -5983,14 +6017,27 @@ button {
   flex: 0 0 152px;
   place-items: center;
   border-radius: 50%;
+  isolation: isolate;
+  transition: none;
 }
 
-.admin-donut::before {
+.admin-donut:hover,
+.admin-donut:focus,
+.admin-donut:focus-within {
+  transform: none;
+  filter: none;
+}
+
+.admin-donut-chart {
   position: absolute;
-  inset: 22px;
-  border-radius: inherit;
-  background: var(--surface);
-  content: '';
+  inset: 0;
+  overflow: visible;
+  transform: rotate(-90deg);
+}
+
+.admin-donut-segment {
+  transition: none;
+  stroke-linecap: butt;
 }
 
 .admin-donut > span {
@@ -6023,6 +6070,12 @@ button {
   gap: 0.5rem;
   color: var(--text-secondary);
   font-size: 0.78rem;
+  border-radius: 0.5rem;
+  transition: background-color 150ms ease;
+}
+
+.admin-distribution-legend li:hover {
+  background: var(--bg-tint);
 }
 
 .admin-distribution-legend li > span:first-child {

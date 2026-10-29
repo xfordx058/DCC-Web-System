@@ -267,6 +267,31 @@ export function eventEndMs(value: unknown) {
   return date.getTime();
 }
 
+export type EventRecord = { eventDate?: unknown; startDate?: unknown; dateExpired?: unknown; [key: string]: unknown };
+
+export function eventStartMs(value: unknown) {
+  if (!value) return NaN;
+  const raw = String(value);
+  return new Date(/^\d{4}-\d{2}-\d{2}$/.test(raw) ? `${raw}T00:00:00` : raw).getTime();
+}
+
+export function getEventStartDate(event: EventRecord) {
+  return event.eventDate || event.startDate || event.dateExpired;
+}
+
+export function getEventEndDate(event: EventRecord) {
+  return event.dateExpired || event.eventDate || event.startDate;
+}
+
+export function getEventStatus(event: EventRecord): 'upcoming' | 'ongoing' | 'past' {
+  const start = eventStartMs(getEventStartDate(event));
+  const end = eventEndMs(getEventEndDate(event));
+  const now = Date.now();
+  if (!Number.isNaN(end) && end < now) return 'past';
+  if (!Number.isNaN(start) && start > now) return 'upcoming';
+  return 'ongoing';
+}
+
 export function isEventActive(value: unknown) {
   const end = eventEndMs(value);
   return Number.isNaN(end) || end >= Date.now();
